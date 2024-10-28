@@ -21,8 +21,7 @@ footer {
   justify-content: space-between;
   align-items: center;
   padding: 15px 30px;
-  background-color: #f1f1f1;
-  border-top: 1px solid #ddd;
+  background-color: #F1F5F9;
 }
 
 .footer-logo .logo {

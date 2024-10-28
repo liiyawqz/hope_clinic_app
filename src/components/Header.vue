@@ -4,7 +4,7 @@ import { RouterLink } from 'vue-router';
 
 <template>
   <header>
-    <a href="#" class="logo">
+    <a href="/" class="logo">
       <img class="image" alt="Hope logo" src="@/assets/logo2.svg" width="35" height="35" />
       <span class="logo-text">HopeClinic</span>
     </a>
@@ -47,13 +47,11 @@ nav {
   font-size: 16px;
 }
 
-nav a {
-  text-decoration: none;
-  font-size: 16px;
-  color: #726666;
-  font-family: inherit;
-}
 
+a {
+  text-decoration: none;
+  color: #726666;
+}
 nav a.router-link-exact-active {
   color: #1861FF;
 }

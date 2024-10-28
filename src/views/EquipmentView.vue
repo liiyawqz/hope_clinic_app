@@ -3,9 +3,7 @@ import EquipmentTable from '@/components/EquipmentTable.vue'
 </script>
 
 <template>
-  <div class="equipment">
-    <h1>This is an about page</h1>
-  </div>
+  <EquipmentTable/>
 </template>
 
 <style>
