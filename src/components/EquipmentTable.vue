@@ -20,11 +20,9 @@
         <th class="text-center">{{ item.empty }}</th>
         <th class="text-center">{{ item.occupied }}</th>
         <th class="text-center">
-          <div class = "border">
             <span :class="{'status-active': item.status === 'Активен', 'status-deleted': item.status === 'Удален'}">
               {{ item.status }}
             </span>
-          </div>
         </th>
         <td>
           <button @click="toggleActions(item)">...</button>
@@ -37,10 +35,24 @@
       </tbody>
     </v-table>
     <div class="pagination">
-      <!-- Добавьте пагинацию как на изображении -->
-      <button @click="prevPage">«</button>
+      <div class="text-center">
+        <v-container>
+          <v-row justify="center">
+            <v-col cols="8">
+              <v-container class="max-width">
+                <v-pagination
+                  v-model="page"
+                  :length="15"
+                  class="my-4"
+                ></v-pagination>
+              </v-container>
+            </v-col>
+          </v-row>
+        </v-container>
+      </div>
+<!--      <button @click="prevPage">«</button>-->
       <button v-for="page in pages" :key="page" @click="goToPage(page)">{{ page }}</button>
-      <button @click="nextPage">»</button>
+<!--      <button @click="nextPage">»</button>-->
     </div>
   </div>
 </template>
@@ -82,6 +94,7 @@ function deleteItem(item) {
 
 
 <style scoped>
+
 .table-container {
   background-color: white;
   overflow: hidden;
@@ -89,11 +102,8 @@ function deleteItem(item) {
   max-width: 1200px;
   margin: 0 auto;
 }
-.border{
-  background-color: white;
-  border-radius: 15px;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-}
+
+
 .rounded-table {
   background-color: white;
   border-radius: 10px;
@@ -117,12 +127,15 @@ th {
 }
 
 .status-active {
-  font-weight: normal;
+  color: green;
+  font-weight: bold;
+  font-size: 15px;
 }
 
 .status-deleted {
-  color: grey;
+  color: black;
   font-weight: bold;
+  font-size: 15px;
 }
 
 .dropdown {
