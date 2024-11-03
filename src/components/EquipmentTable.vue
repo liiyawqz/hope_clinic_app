@@ -42,7 +42,7 @@
               <v-container class="max-width">
                 <v-pagination
                   v-model="page"
-                  :length="15"
+                  :length="10"
                   class="my-4"
                 ></v-pagination>
               </v-container>
@@ -50,9 +50,9 @@
           </v-row>
         </v-container>
       </div>
-<!--      <button @click="prevPage">«</button>-->
+      <!--      <button @click="prevPage">«</button>-->
       <button v-for="page in pages" :key="page" @click="goToPage(page)">{{ page }}</button>
-<!--      <button @click="nextPage">»</button>-->
+      <!--      <button @click="nextPage">»</button>-->
     </div>
   </div>
 </template>
@@ -60,9 +60,7 @@
 <script setup>
 import { ref, computed } from 'vue';
 import { StatusEnum } from '@/utils/statusEnum';
-
 const page = ref(1);
-
 const equipments = computed(() => {
   return [
     { name: 'Костыли', model: 'M5', size: 'S', empty: 6, occupied: 10, status: StatusEnum.Active, showActions: false },
