@@ -1,4 +1,4 @@
-<template>
+этот код <template>
   <v-container>
     <div class="equipment-container">
       <div class="equipment-box">
@@ -29,32 +29,33 @@
           <v-container>
             <v-row class="mb-4">
               <v-text-field
-                id="name"
-                v-model="name"
-                placeholder="Наименование"
+                  id="name"
+                  v-model="name"
+                  placeholder="Наименование"
               />
             </v-row>
             <v-row>
               <v-text-field
-                id="model"
-                v-model="model"
-                placeholder="Модель"
+                  id="model"
+                  v-model="model"
+                  placeholder="Модель"
               />
             </v-row>
             <h2 class="mb-4">Размеры</h2>
             <v-btn-toggle  v-model="selectedSizes" multiple>
               <v-btn
-                v-for="size in sizes"
-                :key="size"
-                :value="size"
-                class="size-btn"
-                :class="{ 'selected': selectedSizes.includes(size) }"
+                  v-for="size in sizes"
+                  :key="size"
+                  :value="size"
+                  class="size-btn"
+                  :class="{ 'selected': selectedSizes.includes(size) }"
               >
                 {{ size }}
               </v-btn>
             </v-btn-toggle>
 
           </v-container>
+
 
         </v-card-text>
         <v-card-actions>
