@@ -20,6 +20,8 @@
       </div>
     </div>
 
+
+
     <v-dialog v-model="dialog" max-width="425px">
       <v-card min-height="500px">
         <v-card-title>
@@ -42,7 +44,7 @@
               />
             </v-row>
             <h2 class="mb-4">Размеры</h2>
-            <v-btn-toggle  v-model="selectedSizes" multiple>
+            <v-btn-toggle v-model="selectedSizes" multiple>
               <v-btn
                 v-for="size in sizes"
                 :key="size"
@@ -53,9 +55,7 @@
                 {{ size }}
               </v-btn>
             </v-btn-toggle>
-
           </v-container>
-
         </v-card-text>
         <v-card-actions>
           <v-btn class="cancel" @click="dialog = false">Отменить</v-btn>
@@ -67,23 +67,31 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
-
-const dialog = ref(false)
-// const name = ref('Pedro Duarte')
-// const model = ref('@peduarte')
-const weeklyStat = ref(10)
+import { ref, defineEmits } from 'vue'
+const emit = defineEmits()
 const weeklyChange = ref(25)
-const monthlyStat = ref(175)
 const monthlyChange = ref(25)
-const sizes = ['S', 'M', 'L', 'XL'];
+const weeklyStat = ref(10)
+const monthlyStat = ref(175)
+const dialog = ref(false)
+const name = ref('')
+const model = ref('')
+const sizes = ['S', 'M', 'L', 'XL']
 const selectedSizes = ref([])
-function saveChanges() {
-  // Logic for saving changes
-  // console.log('Changes saved:', { name: name.value, model: model.value });
+const saveChanges = () => {
+  const newEquipment = {
+    name: name.value,
+    model: model.value,
+    size: selectedSizes.value.join(', '),
+    empty: 0,
+    occupied: 0,
+    status: 'Активен',
+  }
+  emit('addEquipment', newEquipment)
   dialog.value = false
 }
 </script>
+
 
 <style scoped>
 .size-btn{

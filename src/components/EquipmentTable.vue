@@ -9,7 +9,6 @@
         <td class="text-center">Кол-во свободных</td>
         <td class="text-center">Кол-во занятых</td>
         <td class="text-center">Статус</td>
-        <td class="text-center"></td>
       </tr>
       </thead>
       <tbody>
@@ -24,121 +23,21 @@
               {{ item.status }}
             </span>
         </th>
-        <td>
-          <button @click="toggleActions(item)">...</button>
-          <div v-if="item.showActions" class="dropdown">
-            <button @click="editItem(item)">Изменить</button>
-            <button @click="deleteItem(item)">Удалить</button>
-          </div>
-        </td>
       </tr>
       </tbody>
     </v-table>
-
-    <v-dialog v-model="dialog" max-width="500">
-      <v-card>
-        <v-card-title>
-          <span>{{ isEditing ? 'Редактировать оборудование' : 'Добавить оборудование' }}</span>
-        </v-card-title>
-        <v-card-text>
-          <v-text-field v-model="currentItem.name" label="Наименование" />
-          <v-text-field v-model="currentItem.model" label="Модель" />
-          <v-text-field v-model="currentItem.size" label="Размер" />
-          <v-text-field v-model="currentItem.empty" label="Кол-во свободных" type="number" />
-          <v-text-field v-model="currentItem.occupied" label="Кол-во занятых" type="number" />
-          <v-select v-model="currentItem.status" :items="statusOptions" label="Статус" />
-        </v-card-text>
-        <v-card-actions>
-          <v-btn @click="closeDialog">Отменить</v-btn>
-          <v-btn @click="saveItem">{{ isEditing ? 'Сохранить' : 'Добавить' }}</v-btn>
-        </v-card-actions>
-      </v-card>
-    </v-dialog>
-
-    <div class="text-center">
-      <v-pagination
-        :length="3"
-      ></v-pagination>
-    </div>
   </div>
 </template>
 
 <script setup>
-import { ref, computed, onMounted, watch } from 'vue';
-import { StatusEnum } from '@/utils/statusEnum';
-const dialog = ref(false);
-const isEditing = ref(false);
-const currentItem = ref({});
-const page = ref(1);
-const statusOptions = ref([StatusEnum.Active, StatusEnum.Removed]);
-const equipments = ref([]);
+import { defineProps } from 'vue'
 
-onMounted(() => {
-  loadEquipments(); // Загружаем данные при монтировании компонента
-});
-
-watch(equipments, saveEquipments, { deep: true }); // Сохраняем данные при каждом изменении
-
-const pages = computed(() => {
-  const totalPages = Math.ceil(equipments.value.length / 10); // Предположим, 10 элементов на страницу
-  return Array.from({ length: totalPages }, (_, i) => i + 1);
-});
-
-function toggleActions(item) {
-  item.showActions = !item.showActions;
-}
-
-function editItem(item) {
-  currentItem.value = { ...item }; // Копируем объект, чтобы не изменять оригинал
-  isEditing.value = true;
-  dialog.value = true;
-}
-
-function deleteItem(item) {
-  const index = equipments.value.findIndex(e => e.name === item.name && e.model === item.model);
-  if (index > -1) {
-    equipments.value.splice(index, 1);
+const props = defineProps({
+  equipments: {
+    type: Array,
+    required: true
   }
-}
-
-function saveItem() {
-  if (isEditing.value) {
-    const index = equipments.value.findIndex(item => item.name === currentItem.value.name && item.model === currentItem.value.model);
-    if (index > -1) {
-      equipments.value[index] = { ...currentItem.value }; // Обновляем элемент
-    }
-  } else {
-    equipments.value.push({ ...currentItem.value }); // Добавляем новый элемент
-  }
-  closeDialog();
-}
-
-function closeDialog() {
-  dialog.value = false;
-  currentItem.value = {};
-  isEditing.value = false;
-}
-
-function loadEquipments() {
-  const storedEquipments = sessionStorage.getItem('equipments');
-  if (storedEquipments) {
-    equipments.value = JSON.parse(storedEquipments);
-  } else {
-    equipments.value = [
-      { name: 'костыль', model: 'м5', size: 'S', empty: 6, occupied: 10, status: StatusEnum.Active, showActions: false },
-    ];
-  }
-
-}
-
-// Функция для сохранения данных в LocalStorage
-function saveEquipments() {
-  localStorage.setItem('equipments', JSON.stringify(equipments.value));
-}
-
-function goToPage(pageNumber) {
-  page.value = pageNumber;
-}
+})
 </script>
 
 
