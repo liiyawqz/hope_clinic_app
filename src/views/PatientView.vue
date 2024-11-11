@@ -1,6 +1,17 @@
+<script>
+import CustomerTable from "@/components/CustomerTable.vue";
+import {defineComponent} from "vue";
+import CustomerBoxes from "@/components/CustomerBoxes.vue";
+
+export default defineComponent({
+  components: {CustomerBoxes}
+})
+
+</script>
 <template>
   <div class="patient">
-    <h1>This is a patient page</h1>
+    <CustomerBoxes/>
+    <CustomerTable/>
   </div>
 </template>
 
