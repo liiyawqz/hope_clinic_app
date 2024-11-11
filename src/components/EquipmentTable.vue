@@ -34,46 +34,54 @@
       </tr>
       </tbody>
     </v-table>
-    <div class="pagination">
-      <div class="text-center">
-        <v-container>
-          <v-row justify="center">
-            <v-col cols="8">
-              <v-container class="max-width">
-                <v-pagination
-                  v-model="page"
-                  :length="10"
-                  class="my-4"
-                ></v-pagination>
-              </v-container>
-            </v-col>
-          </v-row>
-        </v-container>
-      </div>
-      <!--      <button @click="prevPage">«</button>-->
-      <button v-for="page in pages" :key="page" @click="goToPage(page)">{{ page }}</button>
-      <!--      <button @click="nextPage">»</button>-->
+
+    <v-dialog v-model="dialog" max-width="500">
+      <v-card>
+        <v-card-title>
+          <span>{{ isEditing ? 'Редактировать оборудование' : 'Добавить оборудование' }}</span>
+        </v-card-title>
+        <v-card-text>
+          <v-text-field v-model="currentItem.name" label="Наименование" />
+          <v-text-field v-model="currentItem.model" label="Модель" />
+          <v-text-field v-model="currentItem.size" label="Размер" />
+          <v-text-field v-model="currentItem.empty" label="Кол-во свободных" type="number" />
+          <v-text-field v-model="currentItem.occupied" label="Кол-во занятых" type="number" />
+          <v-select v-model="currentItem.status" :items="statusOptions" label="Статус" />
+        </v-card-text>
+        <v-card-actions>
+          <v-btn @click="closeDialog">Отменить</v-btn>
+          <v-btn @click="saveItem">{{ isEditing ? 'Сохранить' : 'Добавить' }}</v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+
+    <div class="text-center">
+      <v-pagination
+        :length="3"
+      ></v-pagination>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref, computed } from 'vue';
+import { ref, computed, onMounted, watch } from 'vue';
 import { StatusEnum } from '@/utils/statusEnum';
+const dialog = ref(false);
+const isEditing = ref(false);
+const currentItem = ref({});
 const page = ref(1);
-const equipments = computed(() => {
-  return [
-    { name: 'Костыли', model: 'M5', size: 'S', empty: 6, occupied: 10, status: StatusEnum.Active, showActions: false },
-    { name: 'Костыли', model: 'M5', size: 'M', empty: 2, occupied: 10, status: StatusEnum.Active, showActions: false },
-    { name: 'Костыли', model: 'M5', size: 'M', empty: 2, occupied: 10, status: StatusEnum.Active, showActions: false },
-    { name: 'Костыли', model: 'M5', size: 'M', empty: 2, occupied: 10, status: StatusEnum.Active, showActions: false },
-    { name: 'Костыли', model: 'M5', size: 'M', empty: 2, occupied: 10, status: StatusEnum.Removed, showActions: false },
-    { name: 'Костыли', model: 'M5', size: 'M', empty: 2, occupied: 10, status: StatusEnum.Active, showActions: false },
-    { name: 'Костыли', model: 'M5', size: 'M', empty: 2, occupied: 10, status: StatusEnum.Active, showActions: false },
-    { name: 'Костыли', model: 'M5', size: 'M', empty: 2, occupied: 10, status: StatusEnum.Active, showActions: false },
-    { name: 'Костыли', model: 'M5', size: 'M', empty: 2, occupied: 10, status: StatusEnum.Active, showActions: false },
-    { name: 'Костыли', model: 'M5', size: 'M', empty: 2, occupied: 10, status: StatusEnum.Active, showActions: false }
-  ];
+const statusOptions = ref([StatusEnum.Active, StatusEnum.Removed]);
+const equipments = ref([]);
+
+onMounted(() => {
+  loadEquipments(); // Загружаем данные при монтировании компонента
+});
+
+watch(equipments, saveEquipments, { deep: true }); // Сохраняем данные при каждом изменении
+
+const pages = computed(() => {
+  const totalPages = Math.ceil(equipments.value.length / 10); // Предположим, 10 элементов на страницу
+  return Array.from({ length: totalPages }, (_, i) => i + 1);
 });
 
 function toggleActions(item) {
@@ -81,24 +89,71 @@ function toggleActions(item) {
 }
 
 function editItem(item) {
-  console.log("Edit", item);
+  currentItem.value = { ...item }; // Копируем объект, чтобы не изменять оригинал
+  isEditing.value = true;
+  dialog.value = true;
 }
 
 function deleteItem(item) {
-  console.log("Delete", item);
+  const index = equipments.value.findIndex(e => e.name === item.name && e.model === item.model);
+  if (index > -1) {
+    equipments.value.splice(index, 1);
+  }
 }
 
+function saveItem() {
+  if (isEditing.value) {
+    const index = equipments.value.findIndex(item => item.name === currentItem.value.name && item.model === currentItem.value.model);
+    if (index > -1) {
+      equipments.value[index] = { ...currentItem.value }; // Обновляем элемент
+    }
+  } else {
+    equipments.value.push({ ...currentItem.value }); // Добавляем новый элемент
+  }
+  closeDialog();
+}
+
+function closeDialog() {
+  dialog.value = false;
+  currentItem.value = {};
+  isEditing.value = false;
+}
+
+function loadEquipments() {
+  const storedEquipments = sessionStorage.getItem('equipments');
+  if (storedEquipments) {
+    equipments.value = JSON.parse(storedEquipments);
+  } else {
+    equipments.value = [
+      { name: 'костыль', model: 'м5', size: 'S', empty: 6, occupied: 10, status: StatusEnum.Active, showActions: false },
+    ];
+  }
+
+}
+
+// Функция для сохранения данных в LocalStorage
+function saveEquipments() {
+  localStorage.setItem('equipments', JSON.stringify(equipments.value));
+}
+
+function goToPage(pageNumber) {
+  page.value = pageNumber;
+}
 </script>
 
 
-<style scoped>
 
+<style scoped>
 .table-container {
   background-color: white;
   overflow: hidden;
   border-radius: 10px;
   max-width: 1200px;
   margin: 0 auto;
+}
+.text-center{
+  color: #181818;
+
 }
 
 
@@ -107,13 +162,11 @@ function deleteItem(item) {
   border-radius: 10px;
   max-width: 1100px;
   margin: auto;
-
 }
 
 thead tr {
   border-bottom: 2px solid #000000;
 }
-
 
 td, th {
   color: #605C5C;
@@ -159,11 +212,8 @@ th {
   margin: 0 2px;
 }
 
-
 td, th {
   padding: 8px;
   border-bottom: 0.5px solid #605C5C !important;
 }
-
-
 </style>

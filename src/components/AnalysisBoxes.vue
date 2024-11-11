@@ -21,28 +21,28 @@
     </div>
 
     <v-dialog v-model="dialog" max-width="425px">
-      <v-card>
+      <v-card min-height="500px">
         <v-card-title>
           <span>Добавить оборудование</span>
         </v-card-title>
         <v-card-text>
           <v-container>
             <v-row class="mb-4">
-                <v-text-field
-                  id="name"
-                  v-model="name"
-                  placeholder="Наименование"
-                />
+              <v-text-field
+                id="name"
+                v-model="name"
+                placeholder="Наименование"
+              />
             </v-row>
             <v-row>
-                <v-text-field
-                  id="model"
-                  v-model="model"
-                  placeholder="Модель"
-                />
+              <v-text-field
+                id="model"
+                v-model="model"
+                placeholder="Модель"
+              />
             </v-row>
             <h2 class="mb-4">Размеры</h2>
-            <v-btn-toggle v-model="selectedSizes" multiple>
+            <v-btn-toggle  v-model="selectedSizes" multiple>
               <v-btn
                 v-for="size in sizes"
                 :key="size"
@@ -58,7 +58,7 @@
 
         </v-card-text>
         <v-card-actions>
-          <v-btn @click="dialog = false">Отменить</v-btn>
+          <v-btn class="cancel" @click="dialog = false">Отменить</v-btn>
           <v-btn class="save-btn" @click="saveChanges">Добавить</v-btn>
         </v-card-actions>
       </v-card>
@@ -70,8 +70,8 @@
 import { ref } from 'vue'
 
 const dialog = ref(false)
-const name = ref('Pedro Duarte')
-const model = ref('@peduarte')
+// const name = ref('Pedro Duarte')
+// const model = ref('@peduarte')
 const weeklyStat = ref(10)
 const weeklyChange = ref(25)
 const monthlyStat = ref(175)
@@ -80,18 +80,26 @@ const sizes = ['S', 'M', 'L', 'XL'];
 const selectedSizes = ref([])
 function saveChanges() {
   // Logic for saving changes
-  console.log('Changes saved:', { name: name.value, model: model.value });
-  dialog.value = false // Close the dialog after saving
+  // console.log('Changes saved:', { name: name.value, model: model.value });
+  dialog.value = false
 }
 </script>
 
 <style scoped>
+.size-btn{
+  background-color: #F1F5F9;
+  color: black;
+}
 .v-card{
   background-color: white;
   color: black;
+  border-radius: 30px !important;
 }
 .v-dialog{
   border-radius: 50px;
+}
+.sizes{
+  background-color: red;
 }
 
 .equipment-container {
@@ -102,7 +110,9 @@ function saveChanges() {
   background-color: #F1F5F9;
   padding:40px 0px;
 }
-
+.v-card-title{
+  padding-top: 40px;
+}
 .equipment-box {
   background-color: #ffffff;
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
@@ -115,6 +125,11 @@ function saveChanges() {
   background-color: #1861FF;
   color: white;
 }
+.v-card-actions{
+  margin-bottom: 20px;
+  margin-right: 20px;
+
+}
 .add-button {
   background-color: #1861FF;
   color: white;
@@ -124,7 +139,6 @@ function saveChanges() {
   padding: 5px 10px;
 
 }
-
 .stats-box {
   display: flex;
   gap: 90px;
