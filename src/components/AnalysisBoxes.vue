@@ -63,6 +63,12 @@
         </v-card-actions>
       </v-card>
     </v-dialog>
+    <div class="sort-container">
+      <v-btn class="sort" href="../views/SortingView.vue">
+        <img src="../assets/filter.png" alt=""> фильтр
+      </v-btn>
+    </div>
+
   </v-container>
 </template>
 
@@ -94,6 +100,17 @@ const saveChanges = () => {
 
 
 <style scoped>
+.sort-container {
+  display: flex !important;
+  justify-content: flex-end !important;
+}
+.sort{
+  background-color: #ffffff;
+  color: #1E1E1E;
+  margin-bottom: 16px;
+  font-weight: inherit;
+
+}
 .size-btn{
   background-color: #F1F5F9;
   color: black;
