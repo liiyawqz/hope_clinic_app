@@ -1,200 +1,326 @@
 <template>
-  <div class="table-container">
-    <v-table class="rounded-table">
+  <div class="v-table">
+    <h2>Управление данными</h2>
+    <table>
       <thead>
       <tr>
-        <th class="text-left">Фамилия</th>
-        <th class="text-center">Имя</th>
-        <th class="text-center">Отчество</th>
-        <th class="text-center">ID паспорта</th>
-        <th class="text-center">Номер</th>
-        <th class="text-center">Email</th>
-        <th class="text-center"></th>
+        <th>Фамилия</th>
+        <th>Имя</th>
+        <th>Отчество</th>
+        <th>ID</th>
+        <th>Паспорт</th>
+        <th>Номер</th>
+        <th>Email</th>
+        <th>Действия</th>
       </tr>
       </thead>
       <tbody>
-      <tr v-for="item in paginatedEquipments" :key="item.id_doc">
-        <td class="text-left">{{ item.lname }}</td>
-        <td class="text-center">{{ item.fname }}</td>
-        <td class="text-center">{{ item.mname }}</td>
-        <td class="text-center">{{ item.id_doc }}</td>
-        <td class="text-center">{{ item.occupied }}</td>
-        <td class="text-center">{{ item.email }}</td>
-        <td>
-          <button @click="toggleActions(item)">...</button>
-          <div v-if="item.showActions" class="dropdown">
-            <button @click="editItem(item)">Изменить</button>
-            <button @click="deleteItem(item)">Удалить</button>
-          </div>
-        </td>
+      <tr v-for="(row, index) in rows" :key="index">
+
+        <template v-if="editIndex === index">
+          <td><input v-model="editRow.lastName" /></td>
+          <td><input v-model="editRow.firstName" /></td>
+          <td><input v-model="editRow.middleName" /></td>
+          <td><input v-model="editRow.id" type="number" /></td>
+          <td><input v-model="editRow.passport" /></td>
+          <td><input v-model="editRow.phone" /></td>
+          <td><input v-model="editRow.email" /></td>
+          <td>
+            <button @click="saveEdit(index)">Сохранить изменения</button>
+            <button @click="cancelEdit">Отмена</button>
+          </td>
+        </template>
+
+
+        <template v-else>
+          <td>{{ row.lastName }}</td>
+          <td>{{ row.firstName }}</td>
+          <td>{{ row.middleName }}</td>
+          <td>{{ row.id }}</td>
+          <td>{{ row.passport }}</td>
+          <td>{{ row.phone }}</td>
+          <td>{{ row.email }}</td>
+          <td>
+            <button @click="startEdit(index)">Изменить</button>
+            <button @click="deleteRow(index)">Удалить</button>
+          </td>
+        </template>
       </tr>
       </tbody>
-    </v-table>
+    </table>
 
-    <v-dialog v-model="dialog" max-width="500">
-      <v-card>
-        <v-card-title>
-          <span>{{ isEditing ? 'Редактировать запись' : 'Добавить запись' }}</span>
-        </v-card-title>
-        <v-card-text>
-          <v-text-field v-model="currentItem.lname" label="Фамилия" />
-          <v-text-field v-model="currentItem.fname" label="Имя" />
-          <v-text-field v-model="currentItem.mname" label="Отчество" />
-          <v-text-field v-model="currentItem.id_doc" label="ID паспорта" type="number" />
-          <v-text-field v-model="currentItem.occupied" label="Номер" type="number" />
-          <v-text-field v-model="currentItem.email" label="Email" />
-        </v-card-text>
-        <v-card-actions>
-          <v-btn @click="closeDialog">Отменить</v-btn>
-          <v-btn @click="saveItem">{{ isEditing ? 'Сохранить' : 'Добавить' }}</v-btn>
-        </v-card-actions>
-      </v-card>
-    </v-dialog>
 
-    <div class="text-center">
-      <v-pagination :length="totalPages" v-model="page" @input="goToPage"></v-pagination>
+    <button @click="openModal">Добавить</button>
+
+
+    <div v-if="isShowModal" class="modal">
+      <div class="modal-content">
+        <h3>Добавить новую запись</h3>
+        <form @submit.prevent="addRow">
+          <input v-model="newRow.lastName" placeholder="Фамилия" required />
+          <input v-model="newRow.firstName" placeholder="Имя" required />
+          <input v-model="newRow.middleName" placeholder="Отчество" required />
+          <input v-model="newRow.id" type="number" placeholder="ID" required />
+          <input v-model="newRow.passport" placeholder="Паспорт" required />
+          <input v-model="newRow.phone" placeholder="Номер телефона" required />
+          <input v-model="newRow.email" placeholder="Email" type="email" required />
+          <button type="submit">Сохранить</button>
+          <button type="button" @click="closeModal">Отмена</button>
+        </form>
+      </div>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref, computed, onMounted, watch } from 'vue';
-import {StatusEnum} from "@/utils/statusEnum";
+import { ref, reactive } from "vue";
 
-const dialog = ref(false);
-const isEditing = ref(false);
-const currentItem = ref({});
-const page = ref(1);
-const itemsPerPage = 10;
-const equipments = ref([]);
 
-onMounted(() => {
-  loadEquipments();
+const rows = reactive([
+  {
+    lastName: "Иванов",
+    firstName: "Иван",
+    middleName: "Иванович",
+    id: 1,
+    passport: "1234 567890",
+    phone: "+7 999 123-45-67",
+    email: "ivanov@example.com",
+  },
+]);
+
+
+const newRow = reactive({
+  lastName: null,
+  firstName: null,
+  middleName: null,
+  id: null,
+  passport: null,
+  phone: null,
+  email: null,
 });
 
-watch(equipments, saveEquipments, { deep: true });
 
-const paginatedEquipments = computed(() => {
-  const start = (page.value - 1) * itemsPerPage;
-  return equipments.value.slice(start, start + itemsPerPage);
+const editRow = reactive({
+  lastName: null,
+  firstName: null,
+  middleName: null,
+  id: null,
+  passport: null,
+  phone: null,
+  email: null,
 });
 
-const totalPages = computed(() => Math.ceil(equipments.value.length / itemsPerPage));
+const isShowModal = ref(false);
+const editIndex = ref(null);
 
-function toggleActions(item) {
-  item.showActions = !item.showActions;
+
+function openModal() {
+  isShowModal.value = true;
 }
 
-function editItem(item) {
-  currentItem.value = { ...item };
-  isEditing.value = true;
-  dialog.value = true;
+function closeModal() {
+  isShowModal.value = false;
 }
 
-function deleteItem(item) {
-  const index = equipments.value.findIndex(e => e.id_doc === item.id_doc);
-  if (index > -1) {
-    equipments.value.splice(index, 1);
-  }
-}
-
-function saveItem() {
-  if (isEditing.value) {
-    const index = equipments.value.findIndex(item => item.id_doc === currentItem.value.id_doc);
-    if (index > -1) {
-      equipments.value[index] = { ...currentItem.value };
-    }
+function addRow() {
+  if (
+    newRow.lastName &&
+    newRow.firstName &&
+    newRow.middleName &&
+    newRow.id &&
+    newRow.passport &&
+    newRow.phone &&
+    newRow.email
+  ) {
+    rows.push({ ...newRow });
+    resetNewRow();
+    closeModal();
   } else {
-    equipments.value.push({ ...currentItem.value });
+    alert("Заполните все поля");
   }
-  closeDialog();
 }
 
-function closeDialog() {
-  dialog.value = false;
-  currentItem.value = {};
-  isEditing.value = false;
+function resetNewRow() {
+  Object.keys(newRow).forEach((key) => {
+    newRow[key] = null;
+  });
 }
 
-function loadEquipments() {
-  const storedEquipments = sessionStorage.getItem('equipments');
-  if (storedEquipments) {
-    equipments.value = JSON.parse(storedEquipments);
-  } else {
-    equipments.value = [
-      { lname: 'Болотова', fname: 'Алия', mname: 'Сталбековна', id_doc: 155533, occupied: '0709102849', email: 'bolotova_a@iuca.kg', },
-    ];
+function deleteRow(index) {
+  rows.splice(index, 1);
+}
+
+function startEdit(index) {
+  editIndex.value = index;
+  Object.assign(editRow, rows[index]);
+}
+
+function saveEdit(index) {
+  if (editIndex.value !== null) {
+    rows[index] = { ...editRow };
+    cancelEdit();
   }
-
 }
 
-function saveEquipments() {
-  localStorage.setItem('equipments', JSON.stringify(equipments.value));
+function cancelEdit() {
+  editIndex.value = null;
+  resetEditRow();
 }
 
-function goToPage(pageNumber) {
-  page.value = pageNumber;
+function resetEditRow() {
+  Object.keys(editRow).forEach((key) => {
+    editRow[key] = null;
+  });
 }
 </script>
 
 <style scoped>
-.table-container {
-  background-color: white;
-  overflow: hidden;
-  border-radius: 10px;
-  max-width: 1200px;
-  margin: 0 auto;
+.v-table {
+  font-family: Arial, sans-serif;
+  margin: 20px;
+  color: black;
 }
-
-.text-center {
-  color: #181818;
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 10px;
+  background-color: #ffffff;
+  color: black;
 }
-
-.rounded-table {
-  background-color: white;
-  border-radius: 10px;
-  max-width: 1100px;
-  margin: auto;
-}
-
-thead tr {
-  border-bottom: 2px solid #000000;
-}
-
-td, th {
-  color: #605C5C;
+th,
+td {
+  border: 1px solid #ffffff;
   padding: 8px;
+  text-align: left;
+  color: black !important;
 }
-
+td {
+  color: black;
+}
 th {
-  color: #000000;
+  color: black;
 }
-
-.dropdown {
-  position: absolute;
-  background: white;
-  margin-top: 10px;
-  padding: 5px;
-  display: flex;
-  align-items: start;
-  flex-direction: column;
-  min-height: 70px;
+th {
+  background-color: #ffffff;
 }
-
-.pagination {
+button {
+  margin-right: 5px;
+  padding: 5px 10px;
+  cursor: pointer;
+  color: black;
+  background-color: #ffffff;
+}
+.modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(255, 255, 255, 0.9);
   display: flex;
+  align-items: center;
   justify-content: center;
-  margin-top: 10px;
-  color: #181818;
+  color: black;
 }
-
-.pagination button {
-  padding: 5px;
-  margin: 0 2px;
+.modal-content {
+  background: #ffffff;
+  padding: 20px;
+  border-radius: 5px;
+  width: 400px;
+  color: black;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
 }
-
-td, th {
+.modal-content h3 {
+  margin-top: 0;
+  color: black;
+}
+.modal-content input {
+  width: 100%;
+  margin-bottom: 10px;
   padding: 8px;
-  border-bottom: 0.5px solid #605C5C !important;
+  box-sizing: border-box;
+  color: black;
 }
+
+
+
+button {
+  margin-right: 5px;
+  padding: 5px 10px;
+  cursor: pointer;
+  color: #ffffff;
+  background-color: #007BFF;
+  border: none;
+  border-radius: 3px;
+  transition: background-color 0.3s ease;
+}
+
+button:hover {
+  background-color: #0056b3;
+}
+
+button:active {
+  background-color: #003f7f;
+}
+
+button:disabled {
+  background-color: #cccccc;
+  cursor: not-allowed;
+}
+
+.modal-content button {
+  margin: 5px 0;
+}
+
+button.delete {
+  background-color: #dc3545;
+}
+
+button.delete:hover {
+  background-color: #a71d2a;
+}
+
+button.save {
+  background-color: #28a745;
+}
+
+button.save:hover {
+  background-color: #1e7e34;
+}
+
+button.cancel {
+  background-color: #ffc107;
+  color: #212529;
+}
+
+button.cancel:hover {
+  background-color: #e0a800;
+}
+
+
+.modal-content input {
+  color: black;
+  background-color: white;
+  border: 1px solid #ccc;
+  padding: 8px;
+  border-radius: 3px;
+  width: calc(100% - 16px);
+}
+
+.modal-content input::placeholder {
+  color: #888;
+}
+
+.modal-content {
+  color: black;
+}
+
+button {
+  color: black;
+}
+
+.editIndex {
+  color: black;
+}
+
 </style>
