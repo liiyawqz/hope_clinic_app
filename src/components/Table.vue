@@ -51,7 +51,6 @@ async function fetchData() {
   }
 }
 
-// Редактирование элемента
 function editItem(item) {
   formData.id = item.id;
   formData.name = item.name;

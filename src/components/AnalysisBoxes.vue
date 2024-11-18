@@ -1,4 +1,4 @@
-этот код <template>
+<template>
   <v-container>
     <div class="equipment-container">
       <div class="equipment-box">
@@ -20,6 +20,8 @@
       </div>
     </div>
 
+
+
     <v-dialog v-model="dialog" max-width="425px">
       <v-card min-height="500px">
         <v-card-title>
@@ -29,34 +31,31 @@
           <v-container>
             <v-row class="mb-4">
               <v-text-field
-                  id="name"
-                  v-model="name"
-                  placeholder="Наименование"
+                id="name"
+                v-model="name"
+                placeholder="Наименование"
               />
             </v-row>
             <v-row>
               <v-text-field
-                  id="model"
-                  v-model="model"
-                  placeholder="Модель"
+                id="model"
+                v-model="model"
+                placeholder="Модель"
               />
             </v-row>
             <h2 class="mb-4">Размеры</h2>
-            <v-btn-toggle  v-model="selectedSizes" multiple>
+            <v-btn-toggle v-model="selectedSizes" multiple>
               <v-btn
-                  v-for="size in sizes"
-                  :key="size"
-                  :value="size"
-                  class="size-btn"
-                  :class="{ 'selected': selectedSizes.includes(size) }"
+                v-for="size in sizes"
+                :key="size"
+                :value="size"
+                class="size-btn"
+                :class="{ 'selected': selectedSizes.includes(size) }"
               >
                 {{ size }}
               </v-btn>
             </v-btn-toggle>
-
           </v-container>
-
-
         </v-card-text>
         <v-card-actions>
           <v-btn class="cancel" @click="dialog = false">Отменить</v-btn>
@@ -64,29 +63,54 @@
         </v-card-actions>
       </v-card>
     </v-dialog>
+    <div class="sort-container">
+      <v-btn class="sort" href="../views/SortingView.vue">
+        <img src="../assets/filter.png" alt=""> фильтр
+      </v-btn>
+    </div>
+
   </v-container>
 </template>
 
 <script setup>
-import { ref } from 'vue'
-
-const dialog = ref(false)
-// const name = ref('Pedro Duarte')
-// const model = ref('@peduarte')
-const weeklyStat = ref(10)
+import { ref, defineEmits } from 'vue'
+const emit = defineEmits()
 const weeklyChange = ref(25)
-const monthlyStat = ref(175)
 const monthlyChange = ref(25)
-const sizes = ['S', 'M', 'L', 'XL'];
+const weeklyStat = ref(10)
+const monthlyStat = ref(175)
+const dialog = ref(false)
+const name = ref('')
+const model = ref('')
+const sizes = ['S', 'M', 'L', 'XL']
 const selectedSizes = ref([])
-function saveChanges() {
-  // Logic for saving changes
-  // console.log('Changes saved:', { name: name.value, model: model.value });
+const saveChanges = () => {
+  const newEquipment = {
+    name: name.value,
+    model: model.value,
+    size: selectedSizes.value.join(', '),
+    empty: 0,
+    occupied: 0,
+    status: 'Активен',
+  }
+  emit('addEquipment', newEquipment)
   dialog.value = false
 }
 </script>
 
+
 <style scoped>
+.sort-container {
+  display: flex !important;
+  justify-content: flex-end !important;
+}
+.sort{
+  background-color: #ffffff;
+  color: #1E1E1E;
+  margin-bottom: 16px;
+  font-weight: inherit;
+
+}
 .size-btn{
   background-color: #F1F5F9;
   color: black;
@@ -178,3 +202,4 @@ p, h3 {
   color: black;
 }
 </style>
+
