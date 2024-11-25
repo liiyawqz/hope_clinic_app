@@ -3,7 +3,6 @@ import EquipmentTable from '@/components/EquipmentTable.vue'
 </script>
 <template>
   <EquipmentTable/>
-
 </template>
 
 <style>

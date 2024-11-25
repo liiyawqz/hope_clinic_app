@@ -1,5 +1,3 @@
-
-// Composables
 import { createRouter, createWebHistory } from 'vue-router'
 import HomeView from '../views/HomeView.vue'
 
@@ -28,7 +26,12 @@ const routes = [
     path: '/report',
     name: 'report',
     component: () => import('../views/ReportView.vue')
-  }
+  },
+  // {
+  //   path: '/sort-view',
+  //   name: 'sort-view',
+  //   component:()=> import('../views/SortingViews.vue')
+  // },
 ]
 
 const router = createRouter({
