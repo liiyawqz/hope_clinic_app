@@ -1,6 +1,18 @@
 <template>
-  <div class="v-table">
+  <div class="v-table customer-table">
     <h2>Управление данными</h2>
+
+    <!-- Поле для поиска -->
+    <div class="serach_button_container">
+      <input
+        v-model="search"
+        placeholder="Поиск"
+        class="search-input"
+      />
+      <button @click="openModal('add')" class="button_add">Добавить</button>
+    </div>
+
+    <!-- Таблица -->
     <table>
       <thead>
       <tr>
@@ -15,55 +27,79 @@
       </tr>
       </thead>
       <tbody>
-      <tr v-for="(row, index) in rows" :key="index">
-
-        <template v-if="editIndex === index">
-          <td><input v-model="editRow.lastName" /></td>
-          <td><input v-model="editRow.firstName" /></td>
-          <td><input v-model="editRow.middleName" /></td>
-          <td><input v-model="editRow.id" type="number" /></td>
-          <td><input v-model="editRow.passport" /></td>
-          <td><input v-model="editRow.phone" /></td>
-          <td><input v-model="editRow.email" /></td>
-          <td>
-            <button @click="saveEdit(index)">Сохранить изменения</button>
-            <button @click="cancelEdit">Отмена</button>
-          </td>
-        </template>
-
-
-        <template v-else>
-          <td>{{ row.lastName }}</td>
-          <td>{{ row.firstName }}</td>
-          <td>{{ row.middleName }}</td>
-          <td>{{ row.id }}</td>
-          <td>{{ row.passport }}</td>
-          <td>{{ row.phone }}</td>
-          <td>{{ row.email }}</td>
-          <td>
-            <button @click="startEdit(index)">Изменить</button>
-            <button @click="deleteRow(index)">Удалить</button>
-          </td>
-        </template>
+      <tr
+        v-for="(row, index) in paginatedRows"
+        :key="index"
+      >
+        <td>{{ row.lastName }}</td>
+        <td>{{ row.firstName }}</td>
+        <td>{{ row.middleName }}</td>
+        <td>{{ row.id }}</td>
+        <td>{{ row.passport }}</td>
+        <td>{{ row.phone }}</td>
+        <td>{{ row.email }}</td>
+        <td>
+          <button @click="openModal('edit', index)">Изменить</button>
+          <button @click="deleteRow(index)">Удалить</button>
+        </td>
       </tr>
       </tbody>
     </table>
 
+    <!-- Навигация -->
+    <div class="pagination_container">
+      <div class="pagination">
+        <label>Элементов на странице: {{rows.length}} / {{itemsPerPage}}</label>
+        <select v-model="itemsPerPage">
+          <option :value="5">5</option>
+          <option :value="10">10</option>
+          <option :value="15">15</option>
+          <option :value="-1">Все</option>
+        </select>
+        <button
+          @click="changePage(currentPage - 1)"
+          :disabled="currentPage === 1"
+        >
+          Назад
+        </button>
+        <button
+          @click="changePage(currentPage + 1)"
+          :disabled="currentPage === totalPages"
+        >
+          Вперед
+        </button>
+      </div>
+    </div>
 
-    <button @click="openModal">Добавить</button>
+
+    <v-pagination
+      v-model="page"
+      :length="15"
+      class="my-4"
+    ></v-pagination>
 
 
+
+    <!-- Модальное окно -->
     <div v-if="isShowModal" class="modal">
       <div class="modal-content">
-        <h3>Добавить новую запись</h3>
-        <form @submit.prevent="addRow">
-          <input v-model="newRow.lastName" placeholder="Фамилия" required />
-          <input v-model="newRow.firstName" placeholder="Имя" required />
-          <input v-model="newRow.middleName" placeholder="Отчество" required />
-          <input v-model="newRow.id" type="number" placeholder="ID" required />
-          <input v-model="newRow.passport" placeholder="Паспорт" required />
-          <input v-model="newRow.phone" placeholder="Номер телефона" required />
-          <input v-model="newRow.email" placeholder="Email" type="email" required />
+        <h3 v-if="modalType === 'add'">Добавить новую запись</h3>
+        <h3 v-else>Изменить запись</h3>
+        <form @submit.prevent="modalType === 'add' ? addRow() : saveEdit(editIndex)">
+          <label>Введите Фамилию:</label>
+          <input v-model="activeRow.lastName" placeholder="Фамилия" required />
+          <label>Введите Имя:</label>
+          <input v-model="activeRow.firstName" placeholder="Имя" required />
+          <label>Введите Отчество:</label>
+          <input v-model="activeRow.middleName" placeholder="Отчество" required />
+          <label>Введите номер: </label>
+          <input v-model="activeRow.id" type="number" placeholder="ID" required />
+          <label>Введите номер паспорта:</label>
+          <input v-model="activeRow.passport" placeholder="Паспорт" required />
+          <label>Введите номер телефона:</label>
+          <input v-model="activeRow.phone" placeholder="Номер телефона" required />
+          <label>Введите Email:</label>
+          <input v-model="activeRow.email" placeholder="Email" type="email" required />
           <button type="submit">Сохранить</button>
           <button type="button" @click="closeModal">Отмена</button>
         </form>
@@ -73,120 +109,157 @@
 </template>
 
 <script setup>
-import { ref, reactive } from "vue";
+import { ref, reactive, computed, onMounted } from "vue";
+import axios from "axios";
+import axiosInstance from "@/api";
 
+// Получаем базовый URL из переменной окружения
+const baseUrl = import.meta.env.VITE_APP_API_URL;
 
-const rows = reactive([
-  {
-    lastName: "Иванов",
-    firstName: "Иван",
-    middleName: "Иванович",
-    id: 1,
-    passport: "1234 567890",
-    phone: "+7 999 123-45-67",
-    email: "ivanov@example.com",
-  },
-]);
+const search = ref('');
+const itemsPerPage = ref(10);
+const currentPage = ref(1);
 
-
-const newRow = reactive({
-  lastName: null,
-  firstName: null,
-  middleName: null,
-  id: null,
-  passport: null,
-  phone: null,
-  email: null,
-});
-
-
-const editRow = reactive({
-  lastName: null,
-  firstName: null,
-  middleName: null,
-  id: null,
-  passport: null,
-  phone: null,
-  email: null,
-});
+const rows = reactive([]); // Данные будут загружаться с сервера
+const activeRow = reactive([]);
 
 const isShowModal = ref(false);
+const modalType = ref(""); // "add" или "edit"
 const editIndex = ref(null);
 
+// Фильтрация и пагинация
+const filteredRows = computed(() => {
+  if (!search.value) return rows;
+  return rows.filter((row) =>
+    Object.values(row).some((value) =>
+      String(value).toLowerCase().includes(search.value.toLowerCase())
+    )
+  );
+});
 
-function openModal() {
+const paginatedRows = computed(() => {
+  const start = (currentPage.value - 1) * itemsPerPage.value;
+  const end = itemsPerPage.value === -1 ? filteredRows.value.length : start + itemsPerPage.value;
+  return filteredRows.value.slice(start, end);
+});
+
+const totalPages = computed(() =>
+  itemsPerPage.value === -1 ? 1 : Math.ceil(filteredRows.value.length / itemsPerPage.value)
+);
+
+// Загружаем данные с сервера
+onMounted(() => fetchRows());
+
+async function fetchRows() {
+  try {
+    const response = axiosInstance.get('/api/Clients/list',{ params: { clientId: 3 } } )
+    rows.push(response);
+    console.log(rows, 'rows')
+  } catch (error) {
+    console.error("Ошибка загрузки данных:", error);
+  }
+}
+
+function openModal(type, index = null) {
+  modalType.value = type;
   isShowModal.value = true;
+  if (type === "edit" && index !== null) {
+    editIndex.value = index;
+    Object.assign(activeRow, rows[index]);
+  } else {
+    resetActiveRow();
+  }
 }
 
 function closeModal() {
   isShowModal.value = false;
+  resetActiveRow();
 }
 
-function addRow() {
-  if (
-    newRow.lastName &&
-    newRow.firstName &&
-    newRow.middleName &&
-    newRow.id &&
-    newRow.passport &&
-    newRow.phone &&
-    newRow.email
-  ) {
-    rows.push({ ...newRow });
-    resetNewRow();
+function resetActiveRow() {
+  Object.keys(activeRow).forEach((key) => {
+    activeRow[key] = "";
+  });
+}
+
+async function addRow() {
+  try {
+    const response = await axios.post(`${baseUrl}/api/Clients`, activeRow);
+    rows.push(response.data); // Добавляем новую строку
     closeModal();
-  } else {
-    alert("Заполните все поля");
+  } catch (error) {
+    console.error("Ошибка при добавлении строки:", error);
+    alert('Failed to add client data.');
   }
 }
 
-function resetNewRow() {
-  Object.keys(newRow).forEach((key) => {
-    newRow[key] = null;
-  });
-}
-
-function deleteRow(index) {
-  rows.splice(index, 1);
-}
-
-function startEdit(index) {
-  editIndex.value = index;
-  Object.assign(editRow, rows[index]);
-}
-
-function saveEdit(index) {
-  if (editIndex.value !== null) {
-    rows[index] = { ...editRow };
-    cancelEdit();
+async function saveEdit(index) {
+  if (index !== null) {
+    try {
+      const response = await axios.put(`${baseUrl}/api/Clients/${rows[index].id}`, activeRow);
+      rows[index] = response.data; // Обновляем строку
+      closeModal();
+    } catch (error) {
+      console.error("Ошибка при сохранении изменения:", error);
+      alert('Failed to save changes.');
+    }
   }
 }
 
-function cancelEdit() {
-  editIndex.value = null;
-  resetEditRow();
+async function deleteRow(index) {
+  try {
+    await axios.delete(`${baseUrl}/api/Clients/${rows[index].id}`);
+    rows.splice(index, 1); // Удаляем строку
+  } catch (error) {
+    console.error("Ошибка при удалении строки:", error);
+    alert('Failed to delete client data.');
+  }
 }
 
-function resetEditRow() {
-  Object.keys(editRow).forEach((key) => {
-    editRow[key] = null;
-  });
+function changePage(page) {
+  if (page > 0 && page <= totalPages.value) {
+    currentPage.value = page;
+  }
 }
+
 </script>
 
+
 <style scoped>
+.serach_button_container {
+  display: flex;
+  flex-direction: column;
+  float: right;
+  gap: 26px;
+  margin-bottom: 39px;
+}
+.search-input {
+  padding: 9px;
+  border-radius: 10px;
+  border: 1px solid #cccccc;
+  float: right; /* Перемещает элемент вправо */
+}
+
 .v-table {
   font-family: Arial, sans-serif;
-  margin: 20px;
+  margin: 30px;
   color: black;
+  background-color:#F1F5F9;
+  border-radius: 10px;
 }
+ tr {
+  border-bottom: 2px solid #605C5C;
+}
+
+
 table {
   width: 100%;
   border-collapse: collapse;
-  margin-bottom: 10px;
+  margin: 20px;
   background-color: #ffffff;
   color: black;
 }
+
 th,
 td {
   border: 1px solid #ffffff;
@@ -222,13 +295,14 @@ button {
   justify-content: center;
   color: black;
 }
+
 .modal-content {
   background: #ffffff;
   padding: 20px;
   border-radius: 5px;
-  width: 400px;
+  width: 600px;
   color: black;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 2px 10px rgba(63, 8, 73, 0.1);
 }
 .modal-content h3 {
   margin-top: 0;
@@ -255,6 +329,18 @@ button {
   transition: background-color 0.3s ease;
 }
 
+.button_add {
+  margin-right: 5px;
+  padding: 5px 10px;
+  cursor: pointer;
+  color: #ffffff;
+  background-color: #007BFF;
+  border: none;
+  border-radius: 10px;
+  transition: background-color 0.3s ease;
+  float: right;
+}
+
 button:hover {
   background-color: #0056b3;
 }
@@ -271,32 +357,6 @@ button:disabled {
 .modal-content button {
   margin: 5px 0;
 }
-
-button.delete {
-  background-color: #dc3545;
-}
-
-button.delete:hover {
-  background-color: #a71d2a;
-}
-
-button.save {
-  background-color: #28a745;
-}
-
-button.save:hover {
-  background-color: #1e7e34;
-}
-
-button.cancel {
-  background-color: #ffc107;
-  color: #212529;
-}
-
-button.cancel:hover {
-  background-color: #e0a800;
-}
-
 
 .modal-content input {
   color: black;
@@ -316,11 +376,19 @@ button.cancel:hover {
 }
 
 button {
-  color: black;
+  color: white;
+  border-radius: 10px;
 }
 
 .editIndex {
   color: black;
+}
+
+.v-model {
+  color: black;
+}
+input {
+  color:black;
 }
 
 </style>
