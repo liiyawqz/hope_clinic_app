@@ -64,8 +64,9 @@
       </v-card>
     </v-dialog>
     <div class="sort-container">
-      <v-btn class="sort" href="../views/SortingView.vue">
-        <img src="../assets/filter.png" alt=""> фильтр
+      <v-btn class="sort">
+        <RouterLink to="/sort-view">фильтр</RouterLink>
+        <img src="../assets/filter.png" alt="">
       </v-btn>
     </div>
 
@@ -74,7 +75,8 @@
 
 <script setup>
 import { ref, defineEmits } from 'vue'
-const emit = defineEmits()
+import {RouterLink} from "vue-router";
+const emit = defineEmits(['addEquipment'])
 const weeklyChange = ref(25)
 const monthlyChange = ref(25)
 const weeklyStat = ref(10)
@@ -109,7 +111,6 @@ const saveChanges = () => {
   color: #1E1E1E;
   margin-bottom: 16px;
   font-weight: inherit;
-
 }
 .size-btn{
   background-color: #F1F5F9;

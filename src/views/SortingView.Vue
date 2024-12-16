@@ -1,5 +1,10 @@
-<template>
-  <v-btn class="filter" >фильтарция</v-btn>
-</template>>
-<script setup lang="ts">
+
+<script setup>
+import SearchEquipments from "@/components/SearchEquipments.vue"
 </script>
+
+<template>
+  <SearchEquipments></SearchEquipments>
+</template>
+<style scoped>
+</style>
