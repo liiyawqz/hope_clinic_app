@@ -152,13 +152,14 @@ onMounted(() => fetchRows());
 
 async function fetchRows() {
   try {
-    const response = axiosInstance.get('/api/Clients/list',{ params: { clientId: 3 } } )
-    rows.push(response);
-    console.log(rows, 'rows')
+    const response = await axiosInstance.get('/api/Clients/list', { params: { clientId: 3 } });
+    rows.push(...response.data); // Используем spread, чтобы добавлять каждый объект в массив rows
+    console.log(rows, 'rows');
   } catch (error) {
     console.error("Ошибка загрузки данных:", error);
   }
 }
+
 
 function openModal(type, index = null) {
   modalType.value = type;
