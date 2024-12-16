@@ -63,70 +63,40 @@
         </v-card-actions>
       </v-card>
     </v-dialog>
+    <div class="sort-container">
+      <v-btn class="sort" href="../views/SortingView.vue">
+        <img src="../assets/filter.png" alt=""> фильтр
+      </v-btn>
+    </div>
+
   </v-container>
 </template>
 
 <script setup>
-  import { ref, onMounted } from 'vue'
-  import axios from 'axios'
-
-  const weeklyChange = ref(25)
-  const monthlyChange = ref(25)
-  const weeklyStat = ref(10)
-  const monthlyStat = ref(175)
-  const dialog = ref(false)
-  const name = ref('')
-  const model = ref('')
-  const sizes = ['S', 'M', 'L', 'XL']
-  const selectedSizes = ref([])
-  const equipmentList = ref([]) // Для хранения полученных данных
-
-  // Базовый URL для API
-  const API_URL = import.meta.env.VITE_API_URL
-
-  // Получение данных через GET запрос
-  const fetchEquipment = async () => {
-  try {
-  const response = await axios.get(API_URL)
-  equipmentList.value = response.data
-} catch (error) {
-  console.error('Ошибка при получении оборудования:', error)
-}
-}
-
-  // Отправка данных через POST запрос
-  const saveChanges = async () => {
+import { ref, defineEmits } from 'vue'
+const emit = defineEmits()
+const weeklyChange = ref(25)
+const monthlyChange = ref(25)
+const weeklyStat = ref(10)
+const monthlyStat = ref(175)
+const dialog = ref(false)
+const name = ref('')
+const model = ref('')
+const sizes = ['S', 'M', 'L', 'XL']
+const selectedSizes = ref([])
+const saveChanges = () => {
   const newEquipment = {
-  name: name.value,
-  model: model.value,
-  size: selectedSizes.value.join(', '),
-  empty: 0,
-  occupied: 0,
-  status: 'Активен',
-}
-
-  try {
-  const response = await axios.post(API_URL, newEquipment)
-  console.log('Оборудование добавлено:', response.data)
-  equipmentList.value.push(response.data) // Добавить новое оборудование в список
+    name: name.value,
+    model: model.value,
+    size: selectedSizes.value.join(', '),
+    empty: 0,
+    occupied: 0,
+    status: 'Активен',
+  }
+  emit('addEquipment', newEquipment)
   dialog.value = false
-  resetForm()
-} catch (error) {
-  console.error('Ошибка при добавлении оборудования:', error)
-}
 }
 
-  // Очистка формы после сохранения
-  const resetForm = () => {
-  name.value = ''
-  model.value = ''
-  selectedSizes.value = []
-}
-
-  // Автоматический вызов fetchEquipment при монтировании компонента
-  onMounted(() => {
-  fetchEquipment()
-})
 </script>
 
 
@@ -140,6 +110,7 @@
   color: #1E1E1E;
   margin-bottom: 16px;
   font-weight: inherit;
+
 }
 .size-btn{
   background-color: #F1F5F9;
