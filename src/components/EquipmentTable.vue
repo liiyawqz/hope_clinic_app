@@ -41,6 +41,7 @@
         </tr>
         </thead>
         <tbody>
+
         <tr v-for="item in paginatedEquipments" :key="item.name">
           <th class="text-left">{{ item.name }}</th>
           <th class="text-center">{{ item.model }}</th>
@@ -88,14 +89,16 @@
 </template>
 
 <script setup>
-import { defineProps, ref, computed } from 'vue'
+import { defineProps, ref, computed, onMounted} from 'vue'
 
 const props = defineProps({
   equipments: {
     type: Array,
-    required: true
-  }
+    required: true,
+  },
 })
+console.log(props.equipments);
+
 
 const filters = ref({
   name: '',
@@ -143,6 +146,23 @@ function editItem(item) {
 function deleteItem(item) {
   console.log("Delete", item);
 }
+import axios from 'axios';
+
+const equipmentList = ref([]);
+
+const fetchEquipment = async () => {
+  try {
+    const response = await axios.get(import.meta.env.VITE_API_URL);
+    equipmentList.value = response.data;
+  } catch (error) {
+    console.error('Ошибка при получении оборудования:', error);
+  }
+};
+
+onMounted(() => {
+  fetchEquipment();
+});
+
 </script>
 
 <style scoped>
