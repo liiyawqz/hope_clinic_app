@@ -1,0 +1,21 @@
+:root {
+    --background-color: #ffffff;
+    --text-color: #000000;
+}
+
+:root[data-theme="dark"] {
+    --background-color: #000000;
+    --text-color: #605c5c;
+}
+
+body {
+    background-color: var(--background-color);
+    color: var(--text-color);
+    transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+/* Пример стилей для ссылок */
+a {
+    color: var(--text-color);
+}
+

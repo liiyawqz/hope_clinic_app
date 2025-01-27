@@ -1,42 +1,19 @@
 <template>
-  <v-container>
-    <AnalysisBoxes @addEquipment="addEquipment" />
+  <v-container fluid>
     <EquipmentTable :equipments="equipmentData" />
   </v-container>
+
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
-import axios from 'axios'
+import {ref} from 'vue'
 import EquipmentTable from '@/components/EquipmentTable.vue'
-import AnalysisBoxes from '@/components/AnalysisBoxes.vue'
-const baseUrl = import.meta.env.VITE_APP_API_URL
-const equipmentData = ref([])
-const fetchEquipments = async () => {
-  try {
-    const response = await axios.get('/api/equipments') // Ваш эндпоинт
-    equipmentData.value = response.data
-  } catch (error) {
-    console.error('Ошибка при загрузке данных оборудования:', error)
-  }
-}
-const addEquipment = async (newEquipment) => {
-  try {
-    const response = await axios.post('/api/equipments', newEquipment)
-    equipmentData.value.push(response.data)
-  } catch (error) {
-    console.error('Ошибка при добавлении оборудования:', error)
-  }
-}
+// import AnalysisBoxes from '@/components/AnalysisBoxes.vue'
 
-onMounted(() => {
-  fetchEquipments()
-})
+
+const equipmentData = ref([])
+// const addEquipment = (newEquipment) => {
+//   equipmentData.value.push(newEquipment)
+// }
 </script>
 
-<style scoped>
-.v-container {
-  background-color: #F9FAFB;
-  padding: 20px;
-}
-</style>

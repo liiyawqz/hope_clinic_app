@@ -121,8 +121,12 @@ const averageUsageData = ref([
 
 .dashboard-analysis {
   display: flex;
-  //justify-content: space-between;
-  //gap: 20px;
+
+}
+.dashboard{
+  background-color: var(--background-color);
+  color: var(--text-color);
+  transition: background-color 0.3s, color 0.3s;
 }
 .text-center{
   border-radius: 48px;
