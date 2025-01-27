@@ -9,11 +9,13 @@
         placeholder="Поиск"
         class="search-input"
       />
+    </div>
+    <div class="button_add">
       <button @click="openModal('add')" class="button_add">Добавить</button>
     </div>
 
     <!-- Таблица -->
-    <table>
+    <v-data-table>
       <thead>
       <tr>
         <th>Фамилия</th>
@@ -43,11 +45,17 @@
           <button @click="deleteRow(index)">Удалить</button>
         </td>
       </tr>
+
       </tbody>
-    </table>
+    </v-data-table>
+    <v-pagination
+    v-model="table"
+    :length="15"
+    class="my-4"
+  ></v-pagination>
 
     <!-- Навигация -->
-    <div class="pagination_container">
+
       <div class="pagination">
         <label>Элементов на странице: {{rows.length}} / {{itemsPerPage}}</label>
         <select v-model="itemsPerPage">
@@ -69,17 +77,11 @@
           Вперед
         </button>
       </div>
-    </div>
-
-
-    <v-pagination
-      v-model="page"
-      :length="15"
-      class="my-4"
-    ></v-pagination>
-
-
-
+    <v-alert
+      :text="alertMsg"
+      title="Alert title"
+      type="success"
+    ></v-alert>
     <!-- Модальное окно -->
     <div v-if="isShowModal" class="modal">
       <div class="modal-content">
@@ -122,7 +124,7 @@ const currentPage = ref(1);
 
 const rows = reactive([]); // Данные будут загружаться с сервера
 const activeRow = reactive([]);
-
+const alertMsg = 'ALERT'
 const isShowModal = ref(false);
 const modalType = ref(""); // "add" или "edit"
 const editIndex = ref(null);
@@ -152,7 +154,7 @@ onMounted(() => fetchRows());
 
 async function fetchRows() {
   try {
-    const response = await axiosInstance.get('/api/Clients/list', { params: { clientId: 3 } });
+    const response = await axiosInstance.get('/api/Clients/list');
     rows.push(...response.data); // Используем spread, чтобы добавлять каждый объект в массив rows
     console.log(rows, 'rows');
   } catch (error) {
@@ -195,7 +197,7 @@ async function addRow() {
 }
 
 async function saveEdit(index) {
-  if (index !== null) {
+  if (index === null) return
     try {
       const response = await axios.put(`${baseUrl}/api/Clients/${rows[index].id}`, activeRow);
       rows[index] = response.data; // Обновляем строку
@@ -204,7 +206,6 @@ async function saveEdit(index) {
       console.error("Ошибка при сохранении изменения:", error);
       alert('Failed to save changes.');
     }
-  }
 }
 
 async function deleteRow(index) {
@@ -218,9 +219,8 @@ async function deleteRow(index) {
 }
 
 function changePage(page) {
-  if (page > 0 && page <= totalPages.value) {
+  if (page < 0 && page >= totalPages.value) return
     currentPage.value = page;
-  }
 }
 
 </script>
@@ -254,7 +254,7 @@ function changePage(page) {
 
 
 table {
-  width: 100%;
+  max-width: 850px;
   border-collapse: collapse;
   margin: 20px;
   background-color: #ffffff;
@@ -316,31 +316,25 @@ button {
   box-sizing: border-box;
   color: black;
 }
-
-
-
-button {
-  margin-right: 5px;
-  padding: 5px 10px;
-  cursor: pointer;
-  color: #ffffff;
-  background-color: #007BFF;
-  border: none;
-  border-radius: 3px;
-  transition: background-color 0.3s ease;
-}
-
 .button_add {
+  size : small;
+  display: inline-block;
+  width: auto;
   margin-right: 5px;
   padding: 5px 10px;
   cursor: pointer;
-  color: #ffffff;
-  background-color: #007BFF;
   border: none;
   border-radius: 10px;
+  text-align: center;
   transition: background-color 0.3s ease;
   float: right;
 }
+.button_add button {
+  justify-content: start;
+  color: #ffffff;
+  background-color: #007BFF;
+}
+
 
 button:hover {
   background-color: #0056b3;
