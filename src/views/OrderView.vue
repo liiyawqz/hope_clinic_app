@@ -1,8 +1,8 @@
 <script setup>
-import EquipmentTable from '@/components/EquipmentTable.vue'
+import test from '@/components/test.vue'
 </script>
 <template>
-  <EquipmentTable/>
+  <test/>
 </template>
 
 <style>
