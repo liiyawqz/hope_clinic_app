@@ -1,204 +1,114 @@
 <template data-theme="light">
-  <div class="v-table equipment-table">
-    <div class="equipment-container">
-      <div class="equipment-box">
-        <h3>Оборудование</h3>
-        <p>Для того чтобы добавить новое оборудование нажмите на кнопку "Добавить новое"</p>
-        <button @click="openModal('add')" class="add-button">Добавить новое</button>
-      </div>
-      <div class="stats-box">
-        <div class="stats-item">
-          <h3>На этой неделе</h3>
-          <p class="stat-number">{{ weeklyStat }}</p>
-          <p class="stat-change">+{{ weeklyChange }}% from last week</p>
-        </div>
-        <div class="stats-item">
-          <h3>В этом месяце</h3>
-          <p class="stat-number">{{ monthlyStat }}</p>
-          <p class="stat-change">+{{ monthlyChange }}% from last month</p>
-        </div>
-      </div>
-      </div>
-    </div>
+    <v-container>
+      <v-card class="pa-4 mb-4">
+        <v-card-title>Оборудование</v-card-title>
+        <v-card-subtitle>
+          Для того чтобы добавить новое оборудование, нажмите на кнопку "Добавить новое"
+        </v-card-subtitle>
+        <v-btn color="primary" class="mt-2" @click="dialog = true">Добавить новое</v-btn>
+      </v-card>
 
-      <input
-        v-model="search"
-        placeholder="Поиск"
-        class="search-input"
-      />
+      <v-text-field v-model="search" label="Поиск..." append-icon="mdi-magnify" class="mb-4"></v-text-field>
 
-
-  <v-table class = "equipment-table">
-      <thead>
-      <tr>
-        <th class="text-left">Наименование</th>
-        <th class="text-center">Модель</th>
-        <th class="text-center">Размер</th>
-        <th class="text-center">Кол-во свободных</th>
-        <th class="text-center">Кол-во занятых</th>
-        <th class="text-center">Статус</th>
-      </tr>
-      </thead>
-      <tbody>
-      <tr
-        v-for="(row, index) in paginatedRows"
-        :key="index"
+      <v-data-table
+        :headers="headers"
+        :items="filteredItems"
+        item-value="name"
       >
-        <td>{{ row.name }}</td>
-        <td>{{ row.type}}</td>
-        <td>{{ row.size }}</td>
-        <td>{{ row.empty }}</td>
-        <td>{{ row.occupied }}</td>
-        <td>
-          <button @click="openModal('edit', index)">Изменить</button>
-          <button @click="deleteRow(index)">Удалить</button>
-        </td>
-      </tr>
-      </tbody>
-    </v-table>
-      <v-pagination :length="4"></v-pagination>
+        <template v-slot:item.actions="{ item }">
+          <v-menu>
+            <template v-slot:activator="{ props }">
+              <v-btn v-bind="props" icon="mdi-dots-vertical"></v-btn>
+            </template>
+            <v-list>
+              <v-list-item @click="editItem(item)">Редактировать</v-list-item>
+              <v-list-item @click="deleteItem(item)">Удалить</v-list-item>
+            </v-list>
+          </v-menu>
+        </template>
+      </v-data-table>
+
+      <v-dialog v-model="dialog" max-width="500px">
+        <v-card>
+          <v-card-title>Добавить оборудование</v-card-title>
+          <v-card-text>
+            <v-form @submit.prevent="saveItem">
+              <v-text-field v-model="editedItem.name" label="Наименование" required></v-text-field>
+              <v-text-field v-model="editedItem.model" label="Модель" required></v-text-field>
+              <v-text-field v-model="editedItem.size" label="Размер" required></v-text-field>
+              <v-text-field v-model="editedItem.serialNumber" label="Серийный номер" required></v-text-field>
+              <v-text-field v-model.number="editedItem.available" label="Свободно" type="number" required></v-text-field>
+              <v-text-field v-model.number="editedItem.occupied" label="Занято" type="number" required></v-text-field>
+              <v-select v-model="editedItem.status" :items="statuses" label="Статус" required></v-select>
+            </v-form>
+          </v-card-text>
+          <v-card-actions>
+            <v-btn color="blue darken-1" text @click="dialog = false">Отмена</v-btn>
+            <v-btn color="blue darken-1" text @click="saveItem">Сохранить</v-btn>
+          </v-card-actions>
+        </v-card>
+      </v-dialog>
+    </v-container>
+  </template>
+
+  <script setup>
+    import { ref, computed } from 'vue';
+
+    const search = ref('');
+    const dialog = ref(false);
+    const editedItem = ref({});
+    const items = ref([
+      { name: 'Костыли', model: 'M5', size: 'S',serialNumber: '0001', available: 6, occupied: 10, status: 'Активен' },
+      { name: 'Ходунки', model: 'ES', size: 'M',serialNumber: '0002', available: 6, occupied: 10, status: 'Активен' }
+    ]);
+    const statuses = ['Активен', 'Удален'];
+    const headers = [
+      { title: 'Наименование', key: 'name' },
+      { title: 'Модель', key: 'model' },
+      { title: 'Размер', key: 'size' },
+      {title: 'Серийный номер', key: 'serialNumber'},
+      { title: 'Кол-во свободных', key: 'available' },
+      { title: 'Кол-во занятых', key: 'occupied' },
+      { title: 'Статус', key: 'status' },
+      { title: 'Действия', key: 'actions', sortable: false }
+    ];
+
+    const filteredItems = computed(() => {
+      return items.value.filter(item =>
+        Object.values(item).some(value =>
+          String(value).toLowerCase().includes(search.value.toLowerCase())
+        )
+      );
+    });
+
+    const saveItem = () => {
+      if (!editedItem.value.name) return;
+      const index = items.value.findIndex(i => i.name === editedItem.value.name);
+      if (index > -1) {
+        items.value[index] = { ...editedItem.value };
+      } else {
+        items.value.push({ ...editedItem.value });
+      }
+      dialog.value = false;
+      editedItem.value = {};
+    };
+
+    const editItem = (item) => {
+      editedItem.value = { ...item };
+      dialog.value = true;
+    };
+
+    const deleteItem = (item) => {
+      items.value = items.value.filter(i => i !== item);
+    };
+  </script>
 
 
-   <div v-if="isShowModal" class="modal" >
-      <div class="modal-content">
-        <h3 v-if="modalType === 'add'" class="add-text">Добавить оборудование </h3>
-        <h3 v-else>Изменить запись</h3>
-        <form @submit.prevent="modalType === 'add' ? addRow() : saveEdit(editIndex)">
-          <label>Введите наименование:</label>
-          <input class="modal-content-item" v-model="activeRow.name" placeholder="наименование" required />
-          <label>Введите модель:</label>
-          <input class="modal-content-item" v-model="activeRow.type" placeholder="модель" required />
-          <label>Введите размер:</label>
-          <input class="modal-content-item" v-model="activeRow.size" placeholder="размер" required />
-          <div class="canc-sub-button">
-          <button type="button" class="cancel-btn" @click="closeModal">Отмена</button>
-          <button type="submit" class="save-btn">Сохранить</button>
-        </div>
-        </form>
-      </div>
-    </div>
-</template>
-
-<script setup>
-import { ref, reactive, computed, onMounted } from "vue";
-import axios from "axios";
-import axiosInstance from "@/api";
-const baseUrl = import.meta.env.VITE_APP_API_URL;
-const search = ref('');
-const itemsPerPage = ref(10);
-const currentPage = ref(1);
-
-const rows = reactive([]);
-const activeRow = reactive([]);
-
-const isShowModal = ref(false);
-const modalType = ref("");
-const editIndex = ref(null);
-
-const filteredRows = computed(() => {
-  if (!search.value) return rows;
-  return rows.filter((row) =>
-    Object.values(row).some((value) =>
-      String(value).toLowerCase().includes(search.value.toLowerCase())
-    )
-  );
-});
-
-const paginatedRows = computed(() => {
-  const start = (currentPage.value - 1) * itemsPerPage.value;
-  const end = itemsPerPage.value === -1 ? filteredRows.value.length : start + itemsPerPage.value;
-  return filteredRows.value.slice(start, end);
-});
-
-const totalPages = computed(() =>
-  itemsPerPage.value === -1 ? 1 : Math.ceil(filteredRows.value.length / itemsPerPage.value)
-);
-
-// Загружаем данные с сервера
-onMounted(() => fetchRows());
-
-async function fetchRows() {
-  try {
-    const response = await axiosInstance.get('/api/Equipment/list', { params: { clientId: 3 } });
-    rows.push(...response.data);
-    console.log(rows, 'rows');
-  } catch (error) {
-    console.error("Ошибка загрузки данных:", error);
-  }
-}
-
-
-
-function openModal(type, index = null) {
-  modalType.value = type;
-  isShowModal.value = true;
-  if (type === "edit" && index !== null) {
-    editIndex.value = index;
-    Object.assign(activeRow, rows[index]);
-  } else {
-    resetActiveRow();
-  }
-}
-
-function closeModal() {
-  isShowModal.value = false;
-  resetActiveRow();
-}
-
-function resetActiveRow() {
-  Object.keys(activeRow).forEach((key) => {
-    activeRow[key] = "";
-  });
-}
-
-async function addRow() {
-  try {
-    const response = await axios.post(`${baseUrl}/api/Equipment`, activeRow);
-    rows.push(response.data);
-    closeModal();
-  } catch (error) {
-    console.error("Ошибка при добавлении строки:", error);
-    alert('Failed to add client data.');
-  }
-}
-
-async function saveEdit(index) {
-  if (index !== null) {
-    try {
-      const response = await axios.put(`${baseUrl}/api/Equipment/${rows[index].id}`, activeRow);
-      rows[index] = response.data; // Обновляем строку
-      closeModal();
-    } catch (error) {
-      console.error("Ошибка при сохранении изменения:", error);
-      alert('Failed to save changes.');
+  <style scoped>
+  .v-container {
+      max-width: 800px;
+      margin: auto;
     }
-  }
-}
-
-async function deleteRow(index) {
-  try {
-    await axios.delete(`${baseUrl}/api/Equipment/${rows[index].id}`);
-    rows.splice(index, 1); // Удаляем строку
-  } catch (error) {
-    console.error("Ошибка при удалении строки:", error);
-    alert('Failed to delete equipment data.');
-  }
-}
-
-function changePage(page) {
-  if (page > 0 && page <= totalPages.value) {
-    currentPage.value = page;
-  }
-}
-const weeklyChange = ref(25)
-const monthlyChange = ref(25)
-const weeklyStat = ref(10)
-const monthlyStat = ref(175)
-
-</script>
-
-
-<style scoped>
 .search-input {
   background-color: #ffffff;
   padding: 9px;
