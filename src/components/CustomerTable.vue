@@ -1,18 +1,51 @@
 <template>
   <div class="v-table customer-table">
-    <h2>Управление данными</h2>
+
+    <h2>Клиенты</h2>
 
     <!-- Поле для поиска -->
-    <div class="serach_button_container">
+<!--    <div class="serach_button_container">
       <input
         v-model="search"
         placeholder="Поиск"
         class="search-input"
       />
-    </div>
-    <div class="button_add">
+    </div>-->
+
+<!--    <div class="button_add">
       <button @click="openModal('add')" class="button_add">Добавить</button>
+    </div>-->
+    <div class="text-field">
+      <v-text-field
+        v-model="search"
+        density="compact"
+        label="Поиск..."
+        prepend-inner-icon="mdi-magnify"
+        flat
+        hide-details
+        single-line
+      ></v-text-field>
     </div>
+    <div class="container">
+
+      <div class="button_container">
+        <v-btn
+          class="add_button"
+          prepend-icon="mdi-plus-circle"
+          @click="openModal('add')"
+          color="primary"
+        >
+          <template v-slot:prepend>
+            <v-icon color="white"></v-icon>
+          </template>
+
+          Добавить
+
+          <template v-slot:append>
+            <v-icon color="warning"></v-icon>
+          </template>
+        </v-btn>
+      </div>
 
     <!-- Таблица -->
     <v-data-table>
@@ -44,19 +77,21 @@
           <button @click="openModal('edit', index)">Изменить</button>
           <button @click="deleteRow(index)">Удалить</button>
         </td>
+
       </tr>
-
       </tbody>
+      <template v-slot:bottom>
+        <div class="text-center pt-2">
+          <v-pagination
+            v-model="page"
+            :length="pageCount"
+            style="background-color:white"
+          ></v-pagination>
+        </div>
+      </template>
     </v-data-table>
-    <v-pagination
-    v-model="table"
-    :length="15"
-    class="my-4"
-  ></v-pagination>
-
-    <!-- Навигация -->
-
-      <div class="pagination">
+    </div>
+<!--      <div class="pagination">
         <label>Элементов на странице: {{rows.length}} / {{itemsPerPage}}</label>
         <select v-model="itemsPerPage">
           <option :value="5">5</option>
@@ -76,20 +111,18 @@
         >
           Вперед
         </button>
-      </div>
-    <v-alert
-      :text="alertMsg"
-      title="Alert title"
-      type="success"
-    ></v-alert>
+      </div>-->
+
+
+    <alert></alert>
     <!-- Модальное окно -->
-    <div v-if="isShowModal" class="modal">
+<!--    <div v-if="isShowModal" class="modal">
       <div class="modal-content">
         <h3 v-if="modalType === 'add'">Добавить новую запись</h3>
         <h3 v-else>Изменить запись</h3>
         <form @submit.prevent="modalType === 'add' ? addRow() : saveEdit(editIndex)">
           <label>Введите Фамилию:</label>
-          <input v-model="activeRow.lastName" placeholder="Фамилия" required />
+          <input v-model="activeRow.lastName" placeholder="Фамилия" />
           <label>Введите Имя:</label>
           <input v-model="activeRow.firstName" placeholder="Имя" required />
           <label>Введите Отчество:</label>
@@ -101,12 +134,68 @@
           <label>Введите номер телефона:</label>
           <input v-model="activeRow.phone" placeholder="Номер телефона" required />
           <label>Введите Email:</label>
-          <input v-model="activeRow.email" placeholder="Email" type="email" required />
+          <input v-model="activeRow.email" place  holder="Email" type="email" required />
           <button type="submit">Сохранить</button>
           <button type="button" @click="closeModal">Отмена</button>
         </form>
       </div>
+    </div>-->
+    <alert :message="alertMsg" :show="isShowAlert" @close="isShowAlert = false"></alert>
+    <div v-if="isShowModal" class="modal">
+      <div class="modal-content">
+        <v-sheet class="mx-auto" width="600">
+          <v-form fast-fail @submit.prevent>
+            <v-text-field
+              v-model="activeRow.firstName"
+              :rules="firstNameRules"
+              label="First name"
+            ></v-text-field>
+
+            <v-text-field
+              v-model="activeRow.lastName"
+              :rules="lastNameRules"
+              label="Last name"
+            ></v-text-field>
+
+            <v-text-field
+              v-model="activeRow.middleName"
+              :rules="middleNameRules"
+              label="Middle name"
+            ></v-text-field>
+
+            <v-text-field
+              v-model="activeRow.passport"
+              :rules="passportRules"
+              label="Passport"
+            ></v-text-field>
+
+            <v-text-field
+              v-model="activeRow.phone"
+              :rules="phoneRules"
+              label="Phone"
+            ></v-text-field>
+
+            <v-text-field
+              v-model="activeRow.email"
+              :rules="emailRules"
+              label="Email"
+            ></v-text-field>
+
+            <v-text-field
+              v-model="activeRow.id"
+              :rules="idRules"
+              label="ID"
+            ></v-text-field>
+
+            <v-btn class="mt-2" type="submit" block>Submit</v-btn>
+            <v-btn @click="openModal('edit', index)">Изменить</v-btn>
+            <v-btn @click="deleteRow(index)">Удалить</v-btn>
+            <v-btn @click="closeModal(index)">Отмена</v-btn>
+          </v-form>
+        </v-sheet>
+      </div>
     </div>
+
   </div>
 </template>
 
@@ -114,6 +203,7 @@
 import { ref, reactive, computed, onMounted } from "vue";
 import axios from "axios";
 import axiosInstance from "@/api";
+import Alert from "@/components/Alert.vue";
 
 // Получаем базовый URL из переменной окружения
 const baseUrl = import.meta.env.VITE_APP_API_URL;
@@ -161,7 +251,6 @@ async function fetchRows() {
     console.error("Ошибка загрузки данных:", error);
   }
 }
-
 
 function openModal(type, index = null) {
   modalType.value = type;
@@ -227,36 +316,24 @@ function changePage(page) {
 
 
 <style scoped>
-.serach_button_container {
-  display: flex;
-  flex-direction: column;
-  float: right;
-  gap: 26px;
-  margin-bottom: 39px;
-}
-.search-input {
-  padding: 9px;
-  border-radius: 10px;
-  border: 1px solid #cccccc;
-  float: right; /* Перемещает элемент вправо */
-}
-
 .v-table {
   font-family: Arial, sans-serif;
-  margin: 30px;
+  padding: 0.5em;
   color: black;
   background-color:#F1F5F9;
   border-radius: 10px;
+  display: flex;
+  justify-content: center;
 }
  tr {
   border-bottom: 2px solid #605C5C;
 }
-
-
 table {
-  max-width: 850px;
+  display: flex;
+  justify-content: center;
+  max-width: auto;
   border-collapse: collapse;
-  margin: 20px;
+  margin: auto;
   background-color: #ffffff;
   color: black;
 }
@@ -273,8 +350,6 @@ td {
 }
 th {
   color: black;
-}
-th {
   background-color: #ffffff;
 }
 button {
@@ -290,7 +365,6 @@ button {
   left: 0;
   width: 100%;
   height: 100%;
-  background: rgba(255, 255, 255, 0.9);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -298,7 +372,6 @@ button {
 }
 
 .modal-content {
-  background: #ffffff;
   padding: 20px;
   border-radius: 5px;
   width: 600px;
@@ -316,46 +389,13 @@ button {
   box-sizing: border-box;
   color: black;
 }
-.button_add {
-  size : small;
-  display: inline-block;
-  width: auto;
-  margin-right: 5px;
-  padding: 5px 10px;
-  cursor: pointer;
-  border: none;
-  border-radius: 10px;
-  text-align: center;
-  transition: background-color 0.3s ease;
-  float: right;
-}
-.button_add button {
-  justify-content: start;
-  color: #ffffff;
-  background-color: #007BFF;
-}
 
-
-button:hover {
-  background-color: #0056b3;
-}
-
-button:active {
-  background-color: #003f7f;
-}
-
-button:disabled {
-  background-color: #cccccc;
-  cursor: not-allowed;
-}
 
 .modal-content button {
   margin: 5px 0;
 }
 
 .modal-content input {
-  color: black;
-  background-color: white;
   border: 1px solid #ccc;
   padding: 8px;
   border-radius: 3px;
@@ -370,20 +410,29 @@ button:disabled {
   color: black;
 }
 
-button {
-  color: white;
-  border-radius: 10px;
-}
+
 
 .editIndex {
   color: black;
 }
 
 .v-model {
-  color: black;
+  color: white;
 }
 input {
   color:black;
+}
+.add_button {
+background-color: #1861FF;
+  color: white;
+  float: right;
+  border-radius: 14px;
+  font-size: 12px;
+  width: 140px;
+}
+.text-field {
+  width:200px;
+  float: right;
 }
 
 </style>
