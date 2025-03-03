@@ -33,8 +33,8 @@ function changeDarkMode() {
     </nav>
      <div class="icons">
       <v-btn
-        class="ma-2"
-        color="secondary"
+        plain
+        class="ma-2 bg-transparent switch-color-btn"
         @click="changeDarkMode"
       >
         <font-awesome-icon :icon="['fas', 'moon']" />
@@ -99,7 +99,19 @@ nav a.router-link-exact-active {
 }
 
 .icon {
-  margin-top: 15px;
+  margin-top: 10px;
   cursor: pointer;
+}
+
+.switch-color-btn {
+  box-shadow: none;
+  text-decoration: none !important;
+}
+.v-btn {
+  all: unset;
+  cursor: pointer;
+}
+.switch-color-btn:hover{
+  text-decoration: none !important;
 }
 </style>
