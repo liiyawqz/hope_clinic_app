@@ -1,38 +1,22 @@
 <template>
-<!--  <v-dialog v-model="isShowModal" max-width="425px" min-height="500px">-->
-<!--    <div class="card">-->
-<!--    <h1>Добавить оборудование</h1>-->
-<!--    <form @submit.prevent="submitEquipmentData">-->
-<!--      <div>-->
-<!--        <label for="nameType">Наименование:</label>-->
-<!--        <input v-model="equipmentData.nameType" id="nameType" type="text" required />-->
-<!--      </div>-->
-<!--      <div>-->
-<!--        <label for="model"> Модель:</label>-->
-<!--        <input v-model="equipmentData.model" id="model" type="text" required />-->
-<!--      </div>-->
-<!--      <div>-->
-<!--        <label for="model"> Количество:</label>-->
-<!--        <input v-model="equipmentData.count" id="count" type="text" required />-->
-<!--      </div>-->
-<!--      <div>-->
-<!--        <v-select-->
-<!--          class="select-size"-->
-<!--          v-model="equipmentData.size"-->
-<!--          :items="items"-->
-<!--          label="Размер"-->
-<!--        ></v-select>-->
-<!--      </div>-->
-<!--      <div>-->
-<!--        <button class="submit-button" type="submit">Добавить</button>-->
-<!--      </div>-->
-<!--    </form>-->
-<!--    </div>-->
-<!--</v-dialog>-->
-
-
+  <v-dialog v-model="isShowModal" max-width="425px" class="bg-white">
+    <v-card class="pa-6 rounded-x bg-white">
+      <v-card-title class="text-h5 text-center">Добавить оборудование</v-card-title>
+      <v-card-text>
+        <v-form @submit.prevent="submitEquipmentData">
+          <v-text-field v-model="equipmentData.nameType" label="Наименование" required></v-text-field>
+          <v-text-field v-model="equipmentData.model" label="Модель" required></v-text-field>
+          <v-text-field v-model="equipmentData.count" label="Количество" type="number" required></v-text-field>
+          <v-select v-model="equipmentData.size" :items="items" item-title="title" item-value="value" label="Размер"></v-select>
+        </v-form>
+      </v-card-text>
+      <v-card-actions class="justify-end">
+        <v-btn color="grey" @click="isShowModal = false">Отмена</v-btn>
+        <v-btn color="blue-darken-1" @click="submitEquipmentData">Добавить</v-btn>
+      </v-card-actions>
+    </v-card>
+  </v-dialog>
 </template>
-
 <script setup>
 import { StatusEnum } from '@/utils/statusEnum'
 import {computed, ref} from 'vue';
@@ -68,7 +52,7 @@ const submitEquipmentData = async () => {
   console.log('Submitting equipment data:', equipmentData.value);
 
   if (!equipmentData.value.nameType || !equipmentData.value.model) {
-    alert('Please fill in all required fields.');
+    alert('Пожалуйста, заполните все обязательные поля.');
     return;
   }
 
@@ -78,10 +62,10 @@ const submitEquipmentData = async () => {
     emit('addEquipment', payload);
     emit('update:isShowModal', false);
     console.log('Response:', payload);
-    alert('Equipment data submitted successfully!');
+    alert('Оборудование успешно добавлено!');
   } catch (error) {
     console.error('Error submitting equipment data:', error.response ? error.response.data : error.message);
-    alert('Failed to submit equipment data.');
+    alert('Не удалось добавить оборудование.');
   }
 };
 </script>

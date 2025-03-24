@@ -54,7 +54,7 @@ header {
   justify-content: space-between;
   align-items: center;
   padding: 10px 50px;
-  background-color: white;
+  background-color: #f1f5f9;
   box-shadow: 0px 1px 4px rgba(0, 0, 0, 0.1);
 }
 
