@@ -1,19 +1,11 @@
 <template>
-  <v-container fluid>
-    <EquipmentTable :equipments="equipmentData" />
-  </v-container>
+  <EquipmentTable/>
 
 </template>
 
 <script setup>
-import {ref} from 'vue'
 import EquipmentTable from '@/components/EquipmentTable.vue'
-// import AnalysisBoxes from '@/components/AnalysisBoxes.vue'
 
-
-const equipmentData = ref([])
-// const addEquipment = (newEquipment) => {
-//   equipmentData.value.push(newEquipment)
-// }
+//
 </script>
 

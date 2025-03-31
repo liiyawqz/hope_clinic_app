@@ -1,116 +1,164 @@
-<template data-theme="light">
-  <v-container>
-    <v-card class="pa-4 mb-4">
+<template>
+  <v-container class="v-container">
+    <v-card class="pa-4 mb-4 ">
       <v-card-title>Оборудование</v-card-title>
       <v-card-subtitle>
-        Для того чтобы добавить новое оборудование, нажмите на кнопку "Добавить новое"
+        Для того чтобы добавить новое оборудование, нажмите на кнопку "Добавить новое оборудование"
       </v-card-subtitle>
-      <v-btn color="#1861FF" class="mt-2" @click="showModal = true">Добавить новое</v-btn>
+      <v-btn color="#1861FF" class="mt-2" @click="openModal('add')">Добавить новое</v-btn>
     </v-card>
+    <v-text-field
+      v-model="search"
+      label="Поиск..."
+      append-icon="mdi-magnify"
+      class="search"
+    ></v-text-field>
 
     <v-data-table
       class="table"
       :headers="headers"
-      :items="items"
-      item-value="name"
+      :items="items.dataListEquipment"
+      item-value="id"
     >
-      <template v-slot:item.actions="{ item }">
-        <v-menu>
-          <template v-slot:activator="{ props }">
-            <v-btn v-bind="props" icon="mdi-dots-vertical"></v-btn>
-          </template>
-          <v-list>
-            <v-list-item @click="editItem(item)">Редактировать</v-list-item>
-            <v-list-item @click="deleteItem(item)">Удалить</v-list-item>
-          </v-list>
-        </v-menu>
-      </template>
     </v-data-table>
+    <v-dialog v-model="isShowModal" max-width="400px">
+      <v-card class="modalView bg-white" min-height="450px">
+        <v-card-title >
+          {{ modalType === 'add' ? 'Добавить оборудование' : 'Редактировать оборудование' }}
+        </v-card-title>
+        <v-card-text>
+          <v-form @submit.prevent="saveEquipment">
+            <v-text-field v-model="editedItem.equipmentTypeId" label="Наименование" required></v-text-field>
+            <v-text-field v-model="editedItem.subType" label="Модель" required></v-text-field>
+            <v-select
+              v-model="editedItem.size"
+              :items="sizes"
+              item-title="title"
+              item-value="value"
+              label="Размер"
+              class="custom-select">
+            </v-select>
 
-    <CreateEquipmentModal
-      v-model:isShowModal="showModal"
-      @addEquipment="handleAddEquipment"
-      @refreshEquipment="getEquipmentData"
-    />
+          </v-form>
+        </v-card-text>
+        <v-card-actions>
+          <v-btn color="#1861FF" text @click="closeModal">Отмена</v-btn>
+          <v-btn color="#1861FF" text @click="saveEquipment">Сохранить</v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
   </v-container>
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue';
-import JsBarcode from 'jsbarcode';
-import axiosInstance from "@/api";
-import CreateEquipmentModal from "@/components/CreateEquipmentModal.vue";
+import {ref, computed, onMounted} from 'vue';
+import axios from 'axios';
 
-const showModal = ref(false);
+const baseUrl = import.meta.env.VITE_APP_API_URL;
+
+const search = ref('');
+const isShowModal = ref(false);
+const modalType = ref('');
+const editedItem = ref({
+  equipmentTypeId: '',
+  subType: '',
+  size: '',
+});
+
 const items = ref([]);
+const sizes = ref([
+  {title: 'S', value: 'S'},
+  {title: 'M', value: 'M'},
+  {title: 'L', value: 'L'},
+  {title: 'XL', value: 'XL'},
+]);
 const headers = [
-  { title: 'Наименование', key: 'nameType' },
-  { title: 'Модель', key: 'model' },
-  { title: 'Размер', key: 'size' },
-  { title: 'Серийный номер', key: 'serialNumber' },
-  { title: 'Штрих-код', key: 'barcode', sortable: false },
-  { title: 'Кол-во свободных', key: 'available' },
-  { title: 'Кол-во занятых', key: 'occupied' },
-  { title: 'Статус', key: 'status' },
-  { title: 'Действия', key: 'actions', sortable: false }
+  {title: 'Наименование', key: 'equipmentTypeId'},
+  {title: 'Модель', key: 'subType'},
+  {title: 'Размер', key: 'size'},
+  {title: 'Серийный номер', key: 'serialNum'},
+  {title: 'Кол-во свободных', key: 'isAvailable'},
+  {title: 'Действия', key: 'actions', sortable: false}
 ];
 
-const getEquipmentData = async () => {
+const filteredItems = computed(() => {
+  return items.value.filter(item =>
+    Object.values(item).some(value =>
+      String(value).toLowerCase().includes(search.value.toLowerCase())
+    )
+  );
+});
+
+const fetchEquipments = async () => {
   try {
-    const response = await axiosInstance.get('/api/Equipments');
+    const response = await axios.get(`${baseUrl}/api/Equipments/list`);
     items.value = response.data;
-    console.log('Equipment data:', items.value);
   } catch (error) {
-    console.error('Error fetching equipment data:', error.response ? error.response.data : error.message);
+    console.error('Ошибка загрузки списка оборудования:', error);
   }
 };
 
-const generateBarcode = (el, value) => {
-  if (el && value) {
-    JsBarcode(el, value, {
-      format: 'CODE128',
-      displayValue: true,
-      lineColor: "#000",
-      width: 2,
-      height: 50
-    });
+const openModal = (type, item = null) => {
+  modalType.value = type;
+  isShowModal.value = true;
+  if (type === 'edit' && item) {
+    editedItem.value = {...item};
+  } else {
+    editedItem.value = {
+      equipmentTypeId: '',
+      subType: '',
+      size: '',
+    };
+  }
+};
+
+const closeModal = () => {
+  isShowModal.value = false;
+};
+
+const saveEquipment = async () => {
+  try {
+    if (!editedItem.value.subType || !editedItem.value.equipmentTypeId || !editedItem.value.size) {
+      alert('Пожалуйста, заполните все обязательные поля.');
+      return;
+    }
+    const equipmentData = {
+      equipmentTypeId: editedItem.value.equipmentTypeId,
+      subType: editedItem.value.subType,
+      size: editedItem.value.size,
+    };
+
+    let response;
+    if (modalType.value === 'add') {
+      response = await axios.post(`${baseUrl}/api/Equipments`, equipmentData);
+      console.log('Оборудование успешно добавлено:', response.data);
+      items.value.push(response.data);
+    } else {
+      response = await axios.put(`${baseUrl}/api/Equipments/${editedItem.value.id}`, equipmentData);
+      console.log('Оборудование успешно отредактировано:', response.data);
+      const index = items.value.findIndex(item => item.id === editedItem.value.id);
+      if (index !== -1) {
+        items.value[index] = response.data;
+      }
+    }
+    closeModal();
+    fetchEquipments();
+  } catch (error) {
+    console.error('Ошибка сохранения данных оборудования:', error);
+    alert('Произошла ошибка при сохранении данных оборудования. Попробуйте снова.');
   }
 };
 
 onMounted(() => {
-  getEquipmentData();
+  fetchEquipments();
 });
-
-const handleAddEquipment = async (newEquipment) => {
-  try {
-    const response = await axiosInstance.post('/api/Equipments', newEquipment);
-    items.value.push(response.data);
-    console.log('Equipment added:', response.data);
-  } catch (error) {
-    console.error('Error adding equipment:', error.response ? error.response.data : error.message);
-  }
-};
-
-const editItem = (item) => {
-  console.log('Редактирование:', item);
-};
-
-const deleteItem = async (item) => {
-  try {
-    await axiosInstance.delete(`/api/Equipments/${item.id}`);
-    items.value = items.value.filter(i => i.id !== item.id);
-    console.log('Equipment deleted:', item.id);
-  } catch (error) {
-    console.error('Error deleting equipment:', error.response ? error.response.data : error.message);
-  }
-};
 </script>
 
 <style scoped>
-* {
-  transition: background-color 0.3s ease, color 0.3s ease;
+v-card {
+  background-color: var(--background-color);
+  color: var(--text-color);
 }
-
 .pa-4 {
   background-color: var(--background-color);
   color: var(--text-color);
@@ -123,12 +171,28 @@ const deleteItem = async (item) => {
   border-radius: 30px;
   margin-left: 10px;
 }
-
-.table {
+.search{
+  max-width: 399px;
+  margin-left: -90px;
+  margin-top: 50px;
+}
+.table{
   margin-top: 100px;
-  max-width: 1300px;
+  min-width: 1350px;
   background-color: var(--background-color);
   color: var(--text-color);
   margin-left: -90px;
+  border-radius: 20px;
+
 }
+:deep(.v-data-table th:hover) {
+  color: #1861FF !important;
+}
+
+:deep(.custom-select .v-overlay__content) {
+  background-color: red !important; /* Красный фон выпадающего списка */
+}
+
+
+
 </style>
