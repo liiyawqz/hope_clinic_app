@@ -27,6 +27,12 @@ const routes = [
     name: 'report',
     component: () => import('../views/ReportView.vue')
   },
+  {
+    path: '/details/:id',
+    name: 'Details',
+    component: () => import('@/components/DetailsPage.vue'),
+    props: true
+  },
   // {
   //   path: '/sort-view',
   //   name: 'sort-view',
