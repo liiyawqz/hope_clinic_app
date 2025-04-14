@@ -81,13 +81,13 @@ const headers = [
   {title: 'Действия', key: 'actions', sortable: false}
 ];
 
-const filteredItems = computed(() => {
-  return items.value.filter(item =>
-    Object.values(item).some(value =>
-      String(value).toLowerCase().includes(search.value.toLowerCase())
-    )
-  );
-});
+// const filteredItems = computed(() => {
+//   return items.value.filter(item =>
+//     Object.values(item).some(value =>
+//       String(value).toLowerCase().includes(search.value.toLowerCase())
+//     )
+//   );
+// });
 
 const fetchEquipments = async () => {
   try {

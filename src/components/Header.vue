@@ -54,14 +54,13 @@ header {
   justify-content: space-between;
   align-items: center;
   padding: 10px 50px;
-  background-color: #f1f5f9;
+  background-color: white;
   box-shadow: 0px 1px 4px rgba(0, 0, 0, 0.1);
 }
 
 :root[data-theme="dark"] header {
   background-color: #000000;
-  color: white;
-  transition: background-color 0.3s, color 0.3s;
+  color: #f1f5f9;
 }
 
 .logo {

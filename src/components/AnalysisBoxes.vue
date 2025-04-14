@@ -1,206 +1,132 @@
 <template>
-  <v-container>
-    <div class="equipment-container">
-      <div class="equipment-box">
-        <h3>Оборудование</h3>
-        <p>Для того чтобы добавить новое оборудование нажмите на кнопку "Добавить новое"</p>
-        <v-btn @click="dialog = true" class="add-button">Добавить новое</v-btn>
-      </div>
-      <div class="stats-box">
-        <div class="stats-item">
-          <h3>На этой неделе</h3>
-          <p class="stat-number">{{ weeklyStat }}</p>
-          <p class="stat-change">+{{ weeklyChange }}% from last week</p>
-        </div>
-        <div class="stats-item">
-          <h3>В этом месяце</h3>
-          <p class="stat-number">{{ monthlyStat }}</p>
-          <p class="stat-change">+{{ monthlyChange }}% from last month</p>
-        </div>
-      </div>
-    </div>
+  <v-container class="v-container">
+    <v-card class="pa-4 mb-4">
+      <v-card-title>Оборудование</v-card-title>
+      <v-card-subtitle>
+        Для добавления нового оборудования нажмите кнопку "Добавить оборудование"
+      </v-card-subtitle>
+      <v-btn color="primary" class="mt-2" @click="openModal('add')">Добавить оборудование</v-btn>
+    </v-card>
 
+    <v-text-field
+      v-model="search"
+      label="Поиск..."
+      append-icon="mdi-magnify"
+      class="mb-4"
+      @input="searchEquipment"
+    ></v-text-field>
 
+    <v-data-table :headers="headers" :items="items">
+    </v-data-table>
 
-    <v-dialog v-model="dialog" max-width="425px">
-      <v-card min-height="500px">
+    <v-dialog v-model="isShowModal" max-width="600px">
+      <v-card>
         <v-card-title>
-          <span>Добавить оборудование</span>
+          {{ modalType === 'add' ? 'Добавить оборудование' : 'Редактировать оборудование' }}
         </v-card-title>
         <v-card-text>
-          <v-container>
-            <v-row class="mb-4">
-              <v-text-field
-                id="name"
-                v-model="name"
-                placeholder="Наименование"
-              />
-            </v-row>
-            <v-row>
-              <v-text-field
-                id="model"
-                v-model="model"
-                placeholder="Модель"
-              />
-            </v-row>
-            <h2 class="mb-4">Размеры</h2>
-            <v-btn-toggle v-model="selectedSizes" multiple>
-              <v-btn
-                v-for="size in sizes"
-                :key="size"
-                :value="size"
-                class="size-btn"
-                :class="{ 'selected': selectedSizes.includes(size) }"
-              >
-                {{ size }}
-              </v-btn>
-            </v-btn-toggle>
-          </v-container>
+          <v-form @submit.prevent="saveEquipment">
+            <v-text-field v-model="editedItem.equipmentTypeId" label="ID типа оборудования"></v-text-field>
+            <v-text-field v-model="editedItem.subType" label="Подтип"></v-text-field>
+            <v-text-field v-model="editedItem.size" label="Размер"></v-text-field>
+          </v-form>
         </v-card-text>
         <v-card-actions>
-          <v-btn class="cancel" @click="dialog = false">Отменить</v-btn>
-          <v-btn class="save-btn" @click="saveChanges">Добавить</v-btn>
+          <v-btn color="blue darken-1" text @click="closeModal">Отмена</v-btn>
+          <v-btn color="blue darken-1" text @click="saveEquipment">Сохранить</v-btn>
         </v-card-actions>
       </v-card>
     </v-dialog>
-    <div class="sort-container">
-      <v-btn class="sort" href="../views/SortingView.vue">
-        <img src="../assets/filter.png" alt=""> фильтр
-      </v-btn>
-    </div>
-
   </v-container>
 </template>
 
 <script setup>
-import { ref, defineEmits } from 'vue'
-const emit = defineEmits()
-const weeklyChange = ref(25)
-const monthlyChange = ref(25)
-const weeklyStat = ref(10)
-const monthlyStat = ref(175)
-const dialog = ref(false)
-const name = ref('')
-const model = ref('')
-const sizes = ['S', 'M', 'L', 'XL']
-const selectedSizes = ref([])
-const saveChanges = () => {
-  const newEquipment = {
-    name: name.value,
-    model: model.value,
-    size: selectedSizes.value.join(', '),
-    empty: 0,
-    occupied: 0,
-    status: 'Активен',
-  }
-  emit('addEquipment', newEquipment)
-  dialog.value = false
-}
+import { ref, computed, onMounted } from 'vue';
+import axios from 'axios';
 
+const baseUrl = import.meta.env.VITE_APP_API_URL;
+const search = ref('');
+const isShowModal = ref(false);
+const modalType = ref('');
+const editedItem = ref({ equipmentTypeId: '', subType: '', size: '' });
+const items = ref([]);
+const headers = [
+  { title: 'ID типа оборудования', key: 'equipmentTypeId' },
+  { title: 'Подтип', key: 'subType' },
+  { title: 'Размер', key: 'size' },
+  { title: 'Действия', key: 'actions', sortable: false }
+];
+
+const fetchEquipment = async () => {
+  try {
+    const response = await axios.get(`${baseUrl}/api/Equipments/list`);
+    items.value = response.data;
+  } catch (error) {
+    console.error('Ошибка загрузки списка оборудования:', error);
+  }
+};
+
+const searchEquipment = async () => {
+  if (search.value.trim() === '') {
+    await fetchEquipment();
+    return;
+  }
+  try {
+    const response = await axios.post(`${baseUrl}/api/Equipments/search`, { query: search.value });
+    items.value = response.data;
+  } catch (error) {
+    console.error('Ошибка поиска оборудования:', error);
+  }
+};
+
+const openModal = (type, item = null) => {
+  modalType.value = type;
+  isShowModal.value = true;
+  editedItem.value = type === 'edit' && item ? { ...item } : { equipmentTypeId: '', subType: '', size: '' };
+};
+
+const closeModal = () => {
+  isShowModal.value = false;
+};
+
+const saveEquipment = async () => {
+  try {
+    if (!editedItem.value.equipmentTypeId || !editedItem.value.subType || !editedItem.value.size) {
+      alert('Пожалуйста, заполните все обязательные поля.');
+      return;
+    }
+
+    const equipmentData = {
+      equipmentTypeId: parseInt(editedItem.value.equipmentTypeId, 10) || 0,
+      subType: editedItem.value.subType,
+      size: editedItem.value.size
+    };
+
+    let response;
+    if (modalType.value === 'add') {
+      response = await axios.post(`${baseUrl}/api/Equipments`, equipmentData);
+      items.value.push(response.data);
+    } else {
+      response = await axios.put(`${baseUrl}/api/Equipments/${editedItem.value.equipmentId}`, equipmentData);
+      const index = items.value.findIndex(item => item.equipmentId === editedItem.value.equipmentId);
+      if (index !== -1) items.value[index] = response.data;
+    }
+    closeModal();
+    fetchEquipment();
+  } catch (error) {
+    console.error('Ошибка сохранения оборудования:', error);
+    alert('Произошла ошибка. Попробуйте снова позже.');
+  }
+};
+
+onMounted(() => {
+  fetchEquipment();
+});
 </script>
 
-
 <style scoped>
-.sort-container {
-  display: flex !important;
-  justify-content: flex-end !important;
-}
-.sort{
-  background-color: #ffffff;
-  color: #1E1E1E;
-  margin-bottom: 16px;
-  font-weight: inherit;
-
-}
-.size-btn{
-  background-color: #F1F5F9;
-  color: black;
-}
-.v-card{
-  background-color: white;
-  color: black;
-  border-radius: 30px !important;
-}
-.v-dialog{
-  border-radius: 50px;
-}
-.sizes{
-  background-color: red;
-}
-
-.equipment-container {
-  max-width: 1000px;
-  margin: 0 -10px;
-  display: flex;
-  gap: 100px;
-  background-color: #F1F5F9;
-  padding:40px 0px;
-}
-.v-card-title{
-  padding-top: 40px;
-}
-.equipment-box {
-  background-color: #ffffff;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-  border-radius: 30px;
-  padding: 15px 0px 0px 20px;
-  flex: 0.4;
-  line-height: 1.8;
-}
-.save-btn{
-  background-color: #1861FF;
-  color: white;
-}
-.v-card-actions{
-  margin-bottom: 20px;
-  margin-right: 20px;
-
-}
-.add-button {
-  background-color: #1861FF;
-  color: white;
-  border-radius: 50px;
-  font-size: 11px;
-  margin-top: 10px;
-  padding: 5px 10px;
-
-}
-.stats-box {
-  display: flex;
-  gap: 90px;
-  flex: 1;
-}
-
-.stats-item {
-  background-color: #ffffff;
-  border-radius: 30px;
-  width: 170px !important;
-  height: 150px !important;
-  padding: 10px;
-  text-align: center;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-}
-
-.stat-number {
-  font-size: 36px;
-  font-weight: bold;
-}
-
-.stat-change {
-  color: #888;
-  font-size: 14px;
-}
-
-.equipment-box > p {
-  color: #888;
-  font-size: 11px;
-}
-p, h3 {
-  color: black;
+v-card {
+  background-color: var(--background-color);
+  color: var(--text-color);
 }
 </style>
-
