@@ -1,8 +1,8 @@
 <script setup>
-import test from '@/components/test.vue'
+import RentPage from "@/components/RentPage.vue";
 </script>
 <template>
-  <test/>
+  <rent-page/>
 </template>
 
 <style>
