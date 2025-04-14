@@ -20,7 +20,11 @@
       :items="items.dataListEquipment"
       item-value="id"
     >
+      <template #item.serialNum="{ item }">
+        <Barcode :value="item.serialNum" />
+      </template>
     </v-data-table>
+
     <v-dialog v-model="isShowModal" max-width="400px">
       <v-card class="modalView bg-white" min-height="450px">
         <v-card-title >
@@ -52,6 +56,7 @@
 
 <script setup>
 import {ref, computed, onMounted} from 'vue';
+import Barcode from '@/components/Barcode.vue'
 import axios from 'axios';
 
 const baseUrl = import.meta.env.VITE_APP_API_URL;
@@ -81,13 +86,13 @@ const headers = [
   {title: 'Действия', key: 'actions', sortable: false}
 ];
 
-// const filteredItems = computed(() => {
-//   return items.value.filter(item =>
-//     Object.values(item).some(value =>
-//       String(value).toLowerCase().includes(search.value.toLowerCase())
-//     )
-//   );
-// });
+const filteredItems = computed(() => {
+  return items.value.filter(item =>
+    Object.values(item).some(value =>
+      String(value).toLowerCase().includes(search.value.toLowerCase())
+    )
+  );
+});
 
 const fetchEquipments = async () => {
   try {
@@ -159,6 +164,7 @@ v-card {
   background-color: var(--background-color);
   color: var(--text-color);
 }
+
 .pa-4 {
   background-color: var(--background-color);
   color: var(--text-color);
@@ -171,20 +177,24 @@ v-card {
   border-radius: 30px;
   margin-left: 10px;
 }
-.search{
+
+.search {
   max-width: 399px;
   margin-left: -90px;
   margin-top: 50px;
 }
-.table{
+
+.table {
   margin-top: 100px;
   min-width: 1350px;
   background-color: var(--background-color);
   color: var(--text-color);
   margin-left: -90px;
   border-radius: 20px;
+  font-size: 15px;
 
 }
+
 :deep(.v-data-table th:hover) {
   color: #1861FF !important;
 }
@@ -192,7 +202,5 @@ v-card {
 :deep(.custom-select .v-overlay__content) {
   background-color: red !important; /* Красный фон выпадающего списка */
 }
-
-
 
 </style>
