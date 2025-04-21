@@ -19,9 +19,30 @@
       :headers="headers"
       :items="items.dataListEquipment"
       item-value="id"
+      :loading="isLoading"
+      loading-text="Загрузка оборудования..."
     >
-      <template #item.serialNum="{ item }">
+    <template #item.serialNum="{ item }">
         <Barcode :value="item.serialNum" />
+      </template>
+      <template v-slot:items.equipment="{ item }">
+        <div v-if="item.equipment">
+          {{ item.equipment.serialNum }} ({{ item.equipment.status }})
+        </div>
+        <div v-else>Нет оборудования</div>
+      </template>
+      <template v-slot:item.actions="{ item }">
+        <v-menu>
+          <template v-slot:activator="{ props }">
+            <v-btn v-bind="props" icon variant="text" size="small">
+              <v-icon>mdi-dots-horizontal</v-icon>
+            </v-btn>
+          </template>
+          <v-list>
+            <v-list-item @click="openModal('edit', item)">Редактировать</v-list-item>
+            <v-list-item @click="deleteItem(item)">Удалить</v-list-item>
+          </v-list>
+        </v-menu>
       </template>
     </v-data-table>
 
@@ -86,22 +107,19 @@ const headers = [
   {title: 'Действия', key: 'actions', sortable: false}
 ];
 
-const filteredItems = computed(() => {
-  return items.value.filter(item =>
-    Object.values(item).some(value =>
-      String(value).toLowerCase().includes(search.value.toLowerCase())
-    )
-  );
-});
+
 
 const fetchEquipments = async () => {
   try {
+    isLoading.value = true
     const response = await axios.get(`${baseUrl}/api/Equipments/list`);
     items.value = response.data;
   } catch (error) {
     console.error('Ошибка загрузки списка оборудования:', error);
+  } finally {
+    isLoading.value = false
   }
-};
+}
 
 const openModal = (type, item = null) => {
   modalType.value = type;
@@ -157,12 +175,39 @@ const saveEquipment = async () => {
 onMounted(() => {
   fetchEquipments();
 });
+
+
+const isLoading = ref(false)
+
+const deleteItem = async (item) => {
+  if (!confirm('Вы уверены, что хотите удалить это оборудование?')) return;
+
+  try {
+    await axios.delete(`${baseUrl}/api/Equipments/id`, {
+      params: {
+        equipmentId: item.id
+      }
+    });
+
+    // Удалить клиента из списка
+    items.value.dataListEquipment = items.value.dataListEquipment.filter(equipment => equipment.id !== item.id);
+    alert('Клиент успешно удален!');
+  } catch (error) {
+    console.error('Ошибка удаления клиента:', error);
+    alert('Произошла ошибка при удалении клиента. Пожалуйста, попробуйте снова.');
+  }
+};
+
+
+
 </script>
 
 <style scoped>
-v-card {
-  background-color: var(--background-color);
+
+.v-card {
+  background-color: var(--card-color) !important;
   color: var(--text-color);
+  border-radius: 20px;
 }
 
 .pa-4 {
@@ -187,20 +232,21 @@ v-card {
 .table {
   margin-top: 100px;
   min-width: 1350px;
-  background-color: var(--background-color);
-  color: var(--text-color);
   margin-left: -90px;
   border-radius: 20px;
   font-size: 15px;
-
+  background-color: var(--card-color);
+  color: var(--text-color);
 }
+
+.modalView {
+  background-color: var(--card-color) !important;
+  color: var(--text-color);
+}
+
 
 :deep(.v-data-table th:hover) {
   color: #1861FF !important;
-}
-
-:deep(.custom-select .v-overlay__content) {
-  background-color: red !important; /* Красный фон выпадающего списка */
 }
 
 </style>

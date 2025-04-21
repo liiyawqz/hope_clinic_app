@@ -1,68 +1,80 @@
 <template>
-  <v-app>
-    <v-container>
-      <v-card class="pa-4">
-        <h2 class="font-weight-bold mb-4">Учет арендованных товаров</h2>
-
-        <v-text-field
-          v-model="search"
-          label="Поиск..."
-          prepend-inner-icon="mdi-magnify"
-          class="mb-4"
-          hide-details
-        />
-
-        <v-data-table
-          :headers="headers"
-          :items="filteredItems"
-          :items-per-page="10"
-          class="elevation-1"
-          item-value="id"
-        >
-          <template v-slot:item.zalog="{ item }">
-            {{ item.zalog ? `${item.zalog} сом` : '' }}
-          </template>
-        </v-data-table>
-      </v-card>
+    <v-container class="container">
+      <v-data-table
+        class="table"
+        :headers="headers"
+        :items="filteredItems"
+        item-value="id"
+        :items-per-page="10"
+        :loading="loading"
+        loading-text="Загрузка данных..."
+      >
+        <template #item.factReturn="{ item }">
+    <span :style="{ color: item.factReturn === 'не сдано' ? 'gray' : (item.factReturn !== item.returnDateAt ? 'red' : '') }">
+      {{ item.factReturn }}
+    </span>
+        </template>
+      </v-data-table>
     </v-container>
-  </v-app>
 </template>
 
-<script setup>
-import { ref, computed } from 'vue'
 
+<script setup>
+import { ref, computed, onMounted } from 'vue'
+import axios from 'axios'
+import { format } from 'date-fns'
+
+const baseUrl = import.meta.env.VITE_APP_API_URL;
 const search = ref('')
+const rawItems = ref([])
+const loading = ref(true)
 
 const headers = [
-  { title: 'ФИО', key: 'fio' },
-  { title: 'Оборудование', key: 'equipment' },
-  { title: 'Модель', key: 'model' },
+  { title: 'ФИО', key: 'fullName' },
+  { title: 'Номер', key: 'phoneNumber' },
+  { title: 'Оборудование', key: 'typeName' },
+  { title: 'Модель', key: 'subType' },
   { title: 'Размер', key: 'size' },
-  { title: 'Номер аренды', key: 'rentNumber' },
-  { title: 'Дата аренды', key: 'startDate' },
-  { title: 'Предварительная дата возврата', key: 'expectedReturn' },
-  { title: 'Дата возврата (факт)', key: 'actualReturn' },
-  { title: 'Залог', key: 'zalog' },
+  { title: 'Дата аренды', key: 'dateRentAt' },
+  { title: 'Предварительная дата возврата', key: 'returnDateAt' },
+  { title: 'Фактическая дата возврата', key: 'factReturn' },
+  { title: 'Залог', key: 'pledge' },
 ]
 
-const items = ref(
-  Array.from({ length: 100 }).map((_, i) => ({
-    id: i + 1,
-    fio: 'Б.А.С',
-    equipment: 'Костыль',
-    model: 'X5',
-    size: 'S',
-    rentNumber: '01.01.2024',
-    startDate: '01.01.2024',
-    expectedReturn: '01.02.2024',
-    actualReturn: i % 3 === 2 ? null : '01.02.2024',
-    zalog: i % 4 === 0 ? 5000 : null,
-  }))
-)
+const fetchData = async () => {
+  try {
+    loading.value = true
+    const response = await axios.get(`${baseUrl}/api/ClientEquipment/list`)
+    const list = response.data?.result?.dataList || []
+
+    rawItems.value = list.map(item => {
+      return {
+        id: item.id,
+        fullName: `${item.lastName} ${item.firstName} ${item.middleName}`,
+        phoneNumber: item.phoneNumber,
+        typeName: item.typeName,
+        subType: item.subType,
+        size: item.size,
+        dateRentAt: format(new Date(item.dataRentAt), 'dd.MM.yyyy'),
+        returnDateAt: format(new Date(item.returnDateAt), 'dd.MM.yyyy'),
+        factReturn: item.isReturned
+          ? format(new Date(item.returnDateAt), 'dd.MM.yyyy')
+          : 'не сдано',
+        pledge: `${item.pledge} сом`,
+      }
+    })
+  } catch (error) {
+    console.error('Ошибка загрузки:', error)
+  } finally {
+    loading.value = false
+  }
+}
+
+onMounted(fetchData)
 
 const filteredItems = computed(() => {
-  if (!search.value) return items.value
-  return items.value.filter(item =>
+  if (!search.value) return rawItems.value
+  return rawItems.value.filter(item =>
     Object.values(item).some(val =>
       String(val).toLowerCase().includes(search.value.toLowerCase())
     )
@@ -70,8 +82,28 @@ const filteredItems = computed(() => {
 })
 </script>
 
+
 <style>
-.v-data-table {
-  font-size: 14px;
+.container {
+  background-color: var(--background-color);
+  color: var(--text-color);
+  margin-left: 10px;
+
 }
+.mb-4{
+  margin-bottom: 50px !important;
+}
+.table {
+  font-size: 14px;
+  margin-top: 10px;
+  min-width: 1350px;
+  background-color: var(--card-color);
+  color: var(--text-color);
+  border-radius: 20px;
+
+}
+:deep(.v-data-table th:hover) {
+  color: #1861FF !important;
+}
+
 </style>

@@ -1,17 +1,11 @@
-<script setup>
-import RentPage from "@/components/RentPage.vue";
-</script>
 <template>
-  <rent-page/>
+  <dark-mode/>
+
 </template>
 
-<style>
-@media (min-width: 1024px) {
-  .about {
-    min-height: 100vh;
-    display: flex;
-    align-items: center;
-  }
-}
-</style>
+<script setup>
+import DarkMode from "@/components/DarkMode.vue";
+
+//
+</script>
 
