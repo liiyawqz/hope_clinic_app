@@ -84,7 +84,9 @@
     <v-row justify="center" class="mt-5">
       <v-col cols="12" md="4" class="text-center">
         <v-card class="pa-4">
+<!--
           <img src="@/assets/crutch.png" alt="Костыли" class="w-100" />
+-->
         </v-card>
       </v-col>
     </v-row>

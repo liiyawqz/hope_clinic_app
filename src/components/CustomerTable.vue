@@ -3,10 +3,11 @@
     <!-- Карточка с кнопкой добавления клиента -->
     <v-card class="pa-4 mb-4">
       <v-card-title>Клиенты</v-card-title>
+
       <v-card-subtitle>
         Для того чтобы добавить нового клиента, нажмите на кнопку "Добавить нового клиента"
       </v-card-subtitle>
-      <v-btn color="primary" class="mt-2" @click="openModal('add')">Добавить нового клиента</v-btn>
+      <v-btn color="primary" class="mt-2" @click="openModal()">Добавить нового клиента</v-btn>
     </v-card>
 
     <!-- Поиск клиентов -->
@@ -18,11 +19,16 @@
       @input="searchClients"
     ></v-text-field>
     <!-- Таблица клиентов -->
+    <div v-if="loading" class="d-flex justify-center my-4">
+      <v-progress-circular indeterminate color="primary" size="40" />
+    </div>
     <v-data-table
       :headers="headers"
       :items="items.dataList"
       item-value="id"
+      :loading = 'loading'
     >
+
       <template v-slot:items.equipment="{ item }">
         <div v-if="item.equipment">
           {{ item.equipment.serialNum }} ({{ item.equipment.status }})
@@ -36,7 +42,7 @@
             <v-btn v-bind="props" icon="mdi-dots-vertical"></v-btn>
           </template>
           <v-list>
-            <v-list-item @click="openModal('edit', item)">Редактировать</v-list-item>
+            <v-list-item @click="openModal(item)">Редактировать</v-list-item>
             <v-list-item @click="openEquipmentModal(item)">Привязать оборудование</v-list-item>
             <v-list-item @click="deleteItem(item)">Удалить</v-list-item>
             <v-list-item @click="goToDetails(item)">Подробнее</v-list-item>
@@ -49,7 +55,7 @@
     <v-dialog v-model="isShowModal" max-width="600px">
       <v-card>
         <v-card-title>
-          {{ modalType === 'add' ? 'Добавить клиента' : 'Редактировать клиента' }}
+          {{ editedItem.id ? 'Редактировать клиента' : 'Добавить клиента' }}
         </v-card-title>
         <v-card-text>
           <v-form ref="clientForm" @submit.prevent="saveClient">
@@ -91,7 +97,7 @@
         </v-card-text>
         <v-card-actions>
           <v-btn color="blue darken-1" text @click="closeModal">Отмена</v-btn>
-          <v-btn color="blue darken-1" text type="submit">Сохранить</v-btn>
+          <v-btn color="blue darken-1" text @click="saveClient">Сохранить</v-btn>
         </v-card-actions>
       </v-card>
     </v-dialog>
@@ -141,7 +147,6 @@ const baseUrl = import.meta.env.VITE_APP_API_URL;
 const search = ref('');
 const isShowModal = ref(false);
 const isEquipmentModal = ref(false);
-const modalType = ref(''); // 'add' или 'edit'
 const editedItem = ref({
   firstName: '',
   lastName: '',
@@ -154,6 +159,7 @@ const selectedEquipment = ref({
   equipmentId: null,
   clientId: null
 });
+const loading = ref(false);
 const items = ref([]);
 const equipments = ref([]);
 const isLoadingEquipments = ref(false);
@@ -182,11 +188,14 @@ const headers = [
 
 // Загрузка списка клиентов с сервера
 const fetchClients = async () => {
+  loading.value = true;
   try {
     const response = await axios.get(`${baseUrl}/api/Clients/list`);
     items.value = response.data;
   } catch (error) {
     console.error('Ошибка загрузки списка клиентов:', error);
+  }finally {
+    loading.value = false;
   }
 };
 
@@ -209,17 +218,17 @@ const searchClients = async () => {
   }
   try {
     const response = await axios.post(`${baseUrl}/api/Clients/clientId`, { query: search.value });
-    items.value = response.data;
+    items.value.dataList = response.data;
   } catch (error) {
     console.error('Ошибка поиска клиентов:', error);
   }
 };
 
 // Открыть модальное окно для добавления/редактирования клиента
-const openModal = (type, item = null) => {
-  modalType.value = type;
+const openModal = (item = null) => {
   isShowModal.value = true;
-  if (type === 'edit' && item) {
+  console.log(item)
+  if (item?.id) {
     editedItem.value = { ...item };
   } else {
     editedItem.value = {
@@ -244,7 +253,7 @@ const saveClient = async () => {
     const form = document.querySelector('form');
     if (!form.reportValidity()) return;
 
-    const clientData = {
+    const clientCreatePayload = {
       lastName: editedItem.value.lastName,
       firstName: editedItem.value.firstName,
       middleName: editedItem.value.middleName || '',
@@ -253,16 +262,23 @@ const saveClient = async () => {
       email: editedItem.value.email
     };
 
-    let response;
-    if (modalType.value === 'add') {
-      response = await axios.post(`${baseUrl}/api/Clients`, clientData);
-      items.value.push(response.data);
+    const clientUpdatePayload = {
+      clientId: editedItem.value?.id,
+      lastName: editedItem.value.lastName,
+      firstName: editedItem.value.firstName,
+      middleName: editedItem.value.middleName || '',
+      passportId: editedItem.value.passportId,
+      phoneNumber: editedItem.value.phoneNumber,
+      email: editedItem.value.email
+    }
+
+    if (!editedItem.value?.id) {
+      await axios.post(`${baseUrl}/api/Clients`, clientCreatePayload);
+      items.value.dataList.push(editedItem.value);
     } else {
-      response = await axios.put(`${baseUrl}/api/Clients${editedItem.value.id}`, clientData);
-      const index = items.value.findIndex(item => item.id === editedItem.value.id);
-      if (index !== -1) {
-        items.value[index] = response.data;
-      }
+      await axios.patch(`${baseUrl}/api/Clients`, clientUpdatePayload);
+      const index = items.value.dataList.findIndex(item => item.id === editedItem.value.id);
+      items.value.dataList[index] = editedItem.value;
     }
 
     closeModal();

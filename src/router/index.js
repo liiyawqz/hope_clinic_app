@@ -1,7 +1,13 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import HomeView from '../views/HomeView.vue'
+import AuthView from '../views/AuthView.vue' // создадим страницу для авторизации
 
 const routes = [
+  {
+    path: '/auth',
+    name: 'auth',
+    component: AuthView
+  },
   {
     path: '/',
     name: 'home',
@@ -33,11 +39,6 @@ const routes = [
     component: () => import('@/components/DetailsPage.vue'),
     props: true
   },
-  // {
-  //   path: '/sort-view',
-  //   name: 'sort-view',
-  //   component:()=> import('../views/SortingViews.vue')
-  // },
 ]
 
 const router = createRouter({
@@ -45,7 +46,22 @@ const router = createRouter({
   routes,
 })
 
-// Workaround for https://github.com/vitejs/vite/issues/11804
+// Проверка перед каждой навигацией
+router.beforeEach((to, from, next) => {
+  const token = localStorage.getItem('token')
+  if (!token && to.name !== 'auth') {
+    // Если нет токена и не на странице авторизации — гоним на /auth
+    next({ name: 'auth' })
+  } else if (token && to.name === 'auth') {
+    // Если уже залогинен и попал на /auth — кидаем на главную
+    next({ name: 'home' })
+  } else {
+    // Иначе норм, пропускаем
+    next()
+  }
+})
+
+// Workaround for Vite dynamic import error
 router.onError((err, to) => {
   if (err?.message?.includes?.('Failed to fetch dynamically imported module')) {
     if (!localStorage.getItem('vuetify:dynamic-reload')) {
