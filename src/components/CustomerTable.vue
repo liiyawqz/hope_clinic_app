@@ -138,7 +138,7 @@
 
 <script setup>
 import { ref, onMounted } from 'vue';
-import axios from 'axios';
+import api from '../axios';
 import { useRouter } from 'vue-router'
 import router from "@/router";
 // Получаем базовый URL из переменной окружения
@@ -190,7 +190,7 @@ const headers = [
 const fetchClients = async () => {
   loading.value = true;
   try {
-    const response = await axios.get(`${baseUrl}/api/Clients/list`);
+    const response = await api.get(`${baseUrl}/api/Clients/list`);
     items.value = response.data;
   } catch (error) {
     console.error('Ошибка загрузки списка клиентов:', error);
@@ -202,7 +202,7 @@ const fetchClients = async () => {
 // Загрузка списка оборудования с сервера
 const fetchEquipments = async () => {
   try {
-    const response = await axios.get(`${baseUrl}/api/Equipments/list`);
+    const response = await api.get(`${baseUrl}/api/Equipments/list`);
     equipments.value = response.data;
   } catch (error) {
     console.error('Ошибка загрузки списка оборудования:', error);
@@ -217,7 +217,7 @@ const searchClients = async () => {
     return;
   }
   try {
-    const response = await axios.post(`${baseUrl}/api/Clients/clientId`, { query: search.value });
+    const response = await api.post(`${baseUrl}/api/Clients/clientId`, { query: search.value });
     items.value.dataList = response.data;
   } catch (error) {
     console.error('Ошибка поиска клиентов:', error);
@@ -273,10 +273,10 @@ const saveClient = async () => {
     }
 
     if (!editedItem.value?.id) {
-      await axios.post(`${baseUrl}/api/Clients`, clientCreatePayload);
+      await api.post(`${baseUrl}/api/Clients`, clientCreatePayload);
       items.value.dataList.push(editedItem.value);
     } else {
-      await axios.patch(`${baseUrl}/api/Clients`, clientUpdatePayload);
+      await api.patch(`${baseUrl}/api/Clients`, clientUpdatePayload);
       const index = items.value.dataList.findIndex(item => item.id === editedItem.value.id);
       items.value.dataList[index] = editedItem.value;
     }
@@ -303,7 +303,7 @@ const attachEquipment = async () => {
   }
 
   try {
-    await axios.post(`${baseUrl}/api/ClientEquipment`, {
+    await api.post(`${baseUrl}/api/ClientEquipment`, {
       clientId: currentClientId.value,
       equipmentId: selectedEquipment.value.equipmentId
     });
@@ -323,7 +323,7 @@ const deleteItem = async (item) => {
 
   try {
     // Используйте clientId в параметрах запроса
-    await axios.delete(`${baseUrl}/api/Clients/clientId`, {
+    await api.delete(`${baseUrl}/api/Clients/clientId`, {
       params: {
         clientId: item.id
       }

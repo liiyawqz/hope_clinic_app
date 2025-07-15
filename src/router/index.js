@@ -1,44 +1,56 @@
+//router\index.js
 import { createRouter, createWebHistory } from 'vue-router'
 import HomeView from '../views/HomeView.vue'
-import AuthView from '../views/AuthView.vue' // создадим страницу для авторизации
+import api from '@/axios'
 
 const routes = [
   {
-    path: '/auth',
-    name: 'auth',
-    component: AuthView
-  },
-  {
     path: '/',
     name: 'home',
-    component: HomeView
+    component: HomeView,
+    meta: { requiresAuth: true }
   },
   {
     path: '/equipment',
     name: 'equipment',
-    component: () => import('../views/EquipmentView.vue')
+    component: () => import('../views/EquipmentView.vue'),
+    meta: { requiresAuth: true }
   },
   {
     path: '/patient',
     name: 'patient',
-    component: () => import('../views/PatientView.vue')
+    component: () => import('../views/PatientView.vue'),
+    meta: { requiresAuth: true }
   },
   {
     path: '/order',
     name: 'order',
-    component: () => import('../views/OrderView.vue')
+    component: () => import('../views/OrderView.vue'),
+    meta: { requiresAuth: true }
   },
   {
     path: '/report',
     name: 'report',
-    component: () => import('../views/ReportView.vue')
+    component: () => import('../views/ReportView.vue'),
+    meta: { requiresAuth: true }
   },
   {
     path: '/details/:id',
     name: 'Details',
     component: () => import('@/components/DetailsPage.vue'),
-    props: true
+    props: true,
+    meta: { requiresAuth: true }
   },
+  {
+    path: '/login',
+    name: 'login',
+    component: () => import('../components/Login.vue'),
+  },
+  {
+    path: '/administrator',
+    name: 'administrator',
+    component: () => import('../views/adminPanel.vue'),
+  }
 ]
 
 const router = createRouter({
@@ -46,38 +58,19 @@ const router = createRouter({
   routes,
 })
 
-// Проверка перед каждой навигацией
 router.beforeEach((to, from, next) => {
-  const token = localStorage.getItem('token')
-  if (!token && to.name !== 'auth') {
-    // Если нет токена и не на странице авторизации — гоним на /auth
-    next({ name: 'auth' })
-  } else if (token && to.name === 'auth') {
-    // Если уже залогинен и попал на /auth — кидаем на главную
+  const accessToken = localStorage.getItem('accessToken')
+
+  if (to.meta.requiresAuth && !accessToken) {
+    // если маршрут требует авторизации, а токена нет
+    next({ name: 'login' })
+  } else if (to.name === 'login' && accessToken) {
+    // если уже авторизован и идёт на /login — редиректим на главную
     next({ name: 'home' })
   } else {
-    // Иначе норм, пропускаем
+    // в остальных случаях — разрешаем переход
     next()
   }
-})
-
-// Workaround for Vite dynamic import error
-router.onError((err, to) => {
-  if (err?.message?.includes?.('Failed to fetch dynamically imported module')) {
-    if (!localStorage.getItem('vuetify:dynamic-reload')) {
-      console.log('Reloading page to fix dynamic import error')
-      localStorage.setItem('vuetify:dynamic-reload', 'true')
-      location.assign(to.fullPath)
-    } else {
-      console.error('Dynamic import error, reloading page did not fix it', err)
-    }
-  } else {
-    console.error(err)
-  }
-})
-
-router.isReady().then(() => {
-  localStorage.removeItem('vuetify:dynamic-reload')
 })
 
 export default router

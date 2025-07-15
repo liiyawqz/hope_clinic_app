@@ -4,7 +4,7 @@
 </template>
 
 <script setup>
-import DarkMode from "@/components/DarkMode.vue";
+/*import DarkMode from "@/components/DarkMode.vue";*/
 
 //
 </script>

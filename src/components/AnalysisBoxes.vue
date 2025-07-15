@@ -42,7 +42,7 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue';
-import axios from 'axios';
+import api from '../axios';
 
 const baseUrl = import.meta.env.VITE_APP_API_URL;
 const search = ref('');
@@ -59,7 +59,7 @@ const headers = [
 
 const fetchEquipment = async () => {
   try {
-    const response = await axios.get(`${baseUrl}/api/Equipments/list`);
+    const response = await api.get(`${baseUrl}/api/Equipments/list`);
     items.value = response.data;
   } catch (error) {
     console.error('Ошибка загрузки списка оборудования:', error);
@@ -72,7 +72,7 @@ const searchEquipment = async () => {
     return;
   }
   try {
-    const response = await axios.post(`${baseUrl}/api/Equipments/search`, { query: search.value });
+    const response = await api.post(`${baseUrl}/api/Equipments/search`, { query: search.value });
     items.value = response.data;
   } catch (error) {
     console.error('Ошибка поиска оборудования:', error);
@@ -104,10 +104,10 @@ const saveEquipment = async () => {
 
     let response;
     if (modalType.value === 'add') {
-      response = await axios.post(`${baseUrl}/api/Equipments`, equipmentData);
+      response = await api.post(`${baseUrl}/api/Equipments`, equipmentData);
       items.value.push(response.data);
     } else {
-      response = await axios.put(`${baseUrl}/api/Equipments/${editedItem.value.equipmentId}`, equipmentData);
+      response = await api.put(`${baseUrl}/api/Equipments/${editedItem.value.equipmentId}`, equipmentData);
       const index = items.value.findIndex(item => item.equipmentId === editedItem.value.equipmentId);
       if (index !== -1) items.value[index] = response.data;
     }

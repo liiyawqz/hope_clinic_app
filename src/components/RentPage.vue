@@ -23,6 +23,7 @@
 import { ref, computed, onMounted } from 'vue'
 import axios from 'axios'
 import { format } from 'date-fns'
+import api from '../axios'
 
 const baseUrl = import.meta.env.VITE_APP_API_URL;
 const search = ref('')
@@ -44,7 +45,7 @@ const headers = [
 const fetchData = async () => {
   try {
     loading.value = true
-    const response = await axios.get(`${baseUrl}/api/ClientEquipment/list`)
+    const response = await api.get(`${baseUrl}/api/ClientEquipment/list`)
     const list = response.data?.result?.dataList || []
 
     rawItems.value = list.map(item => {

@@ -30,6 +30,7 @@ function changeDarkMode() {
       <RouterLink to="/patient">Клиенты</RouterLink>
       <RouterLink to="/order">Аренда</RouterLink>
       <RouterLink to="/report">Отчеты</RouterLink>
+      <RouterLink to="/administrator">Admin</RouterLink>
     </nav>
      <div class="icons">
       <v-btn
